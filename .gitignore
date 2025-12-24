@@ -52,3 +52,8 @@ Thumbs.db
 *.tmp
 *.bak
 *.cache
+
+# Google Cloud credentials
+*.json
+!package.json
+!package-lock.json
