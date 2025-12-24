@@ -112,6 +112,56 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown("""
     <div class="register-card">
+        <h3>🏭 Reg-A - Production Register</h3>
+        <p><strong>Purpose:</strong> Track production operations and bottling</p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>Batch-wise production tracking</li>
+            <li>Bottling operations management</li>
+            <li>Multi-size bottle production</li>
+            <li>BL/AL automatic calculations</li>
+            <li>Wastage tracking</li>
+            <li>Daily production summary</li>
+        </ul>
+        <p><strong>Status:</strong> ✅ Fully Operational</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="register-card">
+        <h3>📋 Reg-74 - Vat Operations</h3>
+        <p><strong>Purpose:</strong> Track vat operations and storage</p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>SST/BRT vat management</li>
+            <li>Transfer operations</li>
+            <li>Storage wastage (0.3% threshold)</li>
+            <li>Vat-wise inventory</li>
+            <li>Daily operations log</li>
+        </ul>
+        <p><strong>Status:</strong> ✅ Fully Operational</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="register-card">
+        <h3>📄 Reg-76 - SIP 2 Register</h3>
+        <p><strong>Purpose:</strong> Official SIP 2 production register</p>
+        <p><strong>Features:</strong></p>
+        <ul>
+            <li>Opening/closing stock tracking</li>
+            <li>Production recording</li>
+            <li>Issue tracking</li>
+            <li>PDF export with official format</li>
+            <li>Excise officer signatures</li>
+        </ul>
+        <p><strong>Status:</strong> ✅ Fully Operational</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+    <div class="register-card">
         <h3>📦 Reg-B - Issue of Country Liquor in Bottles</h3>
         <p><strong>Purpose:</strong> Track production fees and bottle stock inventory</p>
         <p><strong>Features:</strong></p>
@@ -129,7 +179,7 @@ with col1:
     
     st.markdown("""
     <div class="register-card">
-        <h3>📊 Reg-78 - Production Fees Register</h3>
+        <h3>💵 Reg-78 - Production Fees Register</h3>
         <p><strong>Purpose:</strong> Track production fees on bulk litres</p>
         <p><strong>Features:</strong></p>
         <ul>
@@ -137,12 +187,12 @@ with col1:
             <li>Opening/closing balance tracking</li>
             <li>Deposit management with E-Challan</li>
             <li>Daily summary generation</li>
+            <li>Balance validation</li>
         </ul>
         <p><strong>Status:</strong> ✅ Fully Operational</p>
     </div>
     """, unsafe_allow_html=True)
-
-with col2:
+    
     st.markdown("""
     <div class="register-card">
         <h3>💰 Excise Duty Register</h3>
@@ -157,21 +207,6 @@ with col2:
             <li>Balance validation</li>
         </ul>
         <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="register-card">
-        <h3>🏭 Reg-A - Production Register</h3>
-        <p><strong>Purpose:</strong> Track production operations and bottling</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>Batch-wise production tracking</li>
-            <li>Bottling operations</li>
-            <li>Multi-size bottle production</li>
-            <li>BL/AL calculations</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Integrated</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -214,7 +249,7 @@ st.markdown("## 📊 System Overview")
 col_s1, col_s2, col_s3, col_s4 = st.columns(4)
 
 with col_s1:
-    st.metric("Total Registers", "4", help="Number of active registers")
+    st.metric("Total Registers", "6", help="Number of active registers")
 
 with col_s2:
     st.metric("Bottle Sizes", "6", help="Supported bottle measurements")
@@ -223,7 +258,7 @@ with col_s3:
     st.metric("Strength Options", "4", help="U.P. degree options")
 
 with col_s4:
-    st.metric("Integration Points", "3", help="Cross-register integrations")
+    st.metric("Integration Points", "5", help="Cross-register integrations")
 
 st.markdown("---")
 
