@@ -16,68 +16,117 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
 <style>
+    /* Main header */
     .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 3rem;
-        border-radius: 15px;
+        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+        padding: 2rem;
+        border-radius: 10px;
         color: white;
         text-align: center;
         margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
     }
     
     .main-header h1 {
         margin: 0;
-        font-size: 3rem;
+        font-size: 2.5rem;
         font-weight: 700;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
     }
     
     .main-header p {
-        margin: 1rem 0 0 0;
-        font-size: 1.3rem;
+        margin: 0.5rem 0 0 0;
+        font-size: 1.1rem;
         opacity: 0.95;
     }
     
-    .register-card {
-        background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    /* Section headers */
+    .section-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        margin: 1.5rem 0 1rem 0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+    }
+    
+    /* Info boxes */
+    .info-box {
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        border-radius: 4px;
         margin: 1rem 0;
-        border-left: 5px solid #667eea;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        color: #e0e7ff;
     }
     
-    .register-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    .success-box {
+        background: rgba(34, 197, 94, 0.1);
+        border-left: 4px solid #22c55e;
+        padding: 1rem;
+        border-radius: 4px;
+        margin: 1rem 0;
+        color: #d1fae5;
     }
     
-    .register-card h3 {
-        color: #667eea;
-        margin-top: 0;
-        font-size: 1.5rem;
-    }
-    
-    .register-card p {
-        color: #666;
-        margin: 0.5rem 0;
+    .warning-box {
+        background: rgba(251, 146, 60, 0.1);
+        border-left: 4px solid #fb923c;
+        padding: 1rem;
+        border-radius: 4px;
+        margin: 1rem 0;
+        color: #fed7aa;
     }
     
     .feature-box {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
         padding: 1.5rem;
         border-radius: 10px;
         color: white;
         margin: 1rem 0;
         text-align: center;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
     }
     
     .feature-box h4 {
         margin: 0 0 0.5rem 0;
         font-size: 1.2rem;
     }
+    
+    .feature-box p {
+        margin: 0;
+        opacity: 0.9;
+    }
+    
+    /* Register cards (if needed for navigation) */
+    .register-card {
+        background: #2d3748; /* Darker background for cards */
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        margin: 1rem 0;
+        border-left: 5px solid #7c3aed; /* Accent color */
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        color: #e2e8f0; /* Light text for dark background */
+    }
+    
+    .register-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    
+    .register-card h3 {
+        color: #a78bfa; /* Lighter accent for headers */
+        margin-top: 0;
+        font-size: 1.5rem;
+    }
+    
+    .register-card p {
+        color: #cbd5e0; /* Slightly darker light text */
+        margin: 0.5rem 0;
+    }
+    
     
     .feature-box p {
         margin: 0;
@@ -101,114 +150,6 @@ st.markdown("""
 This comprehensive system manages all excise-related registers for distillery operations. 
 Select a register from the sidebar to begin.
 """)
-
-st.markdown("---")
-
-# Available Registers
-st.markdown("## 📋 Available Registers")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("""
-    <div class="register-card">
-        <h3>🏭 Reg-A - Production Register</h3>
-        <p><strong>Purpose:</strong> Track production operations and bottling</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>Batch-wise production tracking</li>
-            <li>Bottling operations management</li>
-            <li>Multi-size bottle production</li>
-            <li>BL/AL automatic calculations</li>
-            <li>Wastage tracking</li>
-            <li>Daily production summary</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="register-card">
-        <h3>📋 Reg-74 - Vat Operations</h3>
-        <p><strong>Purpose:</strong> Track vat operations and storage</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>SST/BRT vat management</li>
-            <li>Transfer operations</li>
-            <li>Storage wastage (0.3% threshold)</li>
-            <li>Vat-wise inventory</li>
-            <li>Daily operations log</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="register-card">
-        <h3>📄 Reg-76 - SIP 2 Register</h3>
-        <p><strong>Purpose:</strong> Official SIP 2 production register</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>Opening/closing stock tracking</li>
-            <li>Production recording</li>
-            <li>Issue tracking</li>
-            <li>PDF export with official format</li>
-            <li>Excise officer signatures</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-    <div class="register-card">
-        <h3>📦 Reg-B - Issue of Country Liquor in Bottles</h3>
-        <p><strong>Purpose:</strong> Track production fees and bottle stock inventory</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>Production fees account (₹3 per bottle)</li>
-            <li>Multi-size bottle tracking (750ml, 600ml, 500ml, 375ml, 300ml, 180ml)</li>
-            <li>Multi-strength tracking (50°, 60°, 70°, 80° U.P.)</li>
-            <li>Auto-fill from Reg-A production data</li>
-            <li>BL/AL automatic calculations</li>
-            <li>Wastage/breakage tracking</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="register-card">
-        <h3>💵 Reg-78 - Production Fees Register</h3>
-        <p><strong>Purpose:</strong> Track production fees on bulk litres</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>Production fees at ₹3/BL</li>
-            <li>Opening/closing balance tracking</li>
-            <li>Deposit management with E-Challan</li>
-            <li>Daily summary generation</li>
-            <li>Balance validation</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="register-card">
-        <h3>💰 Excise Duty Register</h3>
-        <p><strong>Purpose:</strong> Personal ledger account of excise duty for IML</p>
-        <p><strong>Features:</strong></p>
-        <ul>
-            <li>Strength-based duty rates (₹50, ₹20, ₹17 per BL)</li>
-            <li>Auto-fill from Reg-B issued bottles</li>
-            <li>Financial account tracking</li>
-            <li>Transport permit tracking</li>
-            <li>Duty breakdown by strength</li>
-            <li>Balance validation</li>
-        </ul>
-        <p><strong>Status:</strong> ✅ Fully Operational</p>
-    </div>
-    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
