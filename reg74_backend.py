@@ -3,9 +3,18 @@ import pandas as pd
 from datetime import datetime
 from reg74_schema import REG74_COLUMNS
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import gspread
-from google.oauth2.service_account import Credentials
+try:
+    from streamlit_gsheets import GSheetsConnection
+    GSHEETS_AVAILABLE = True
+except ImportError:
+    GSHEETS_AVAILABLE = False
+    
+try:
+    import gspread
+    from google.oauth2.service_account import Credentials
+    GSPREAD_AVAILABLE = True
+except ImportError:
+    GSPREAD_AVAILABLE = False
 
 CSV_PATH = "reg74_data.csv"
 JSON_KEY = "the-program-482110-e4-7ef9d425d794.json"
@@ -14,8 +23,23 @@ WORKSHEET_NAME = "Reg74"  # Different worksheet for Reg-74
 
 def get_google_client():
     """Returns a direct gspread client using service account"""
+    if not GSPREAD_AVAILABLE:
+        return None
+        
     try:
-        if os.path.exists(JSON_KEY):
+        # Try Streamlit secrets first (for Streamlit Cloud)
+        if "gsheets_credentials" in st.secrets:
+            scopes = [
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive"
+            ]
+            creds = Credentials.from_service_account_info(
+                st.secrets["gsheets_credentials"],
+                scopes=scopes
+            )
+            return gspread.authorize(creds)
+        # Fallback to local JSON file
+        elif os.path.exists(JSON_KEY):
             scopes = [
                 "https://www.googleapis.com/auth/spreadsheets",
                 "https://www.googleapis.com/auth/drive"
@@ -23,7 +47,7 @@ def get_google_client():
             creds = Credentials.from_service_account_file(JSON_KEY, scopes=scopes)
             return gspread.authorize(creds)
     except Exception as e:
-        st.error(f"GSpread Auth Error: {e}")
+        st.warning(f"Google Sheets not available: {e}. Using local CSV.")
     return None
 
 def get_data_local():
