@@ -9,8 +9,9 @@ def generate_flowchart_pdf():
     c = canvas.Canvas(filename, pagesize=landscape(A4))
     width, height = landscape(A4)
 
-    # Modern Color Palette - Vibrant & Professional
-    DARK_BG = HexColor("#0F172A")
+    # Modern Color Palette - Vibrant & Professional (Light Background)
+    WHITE_BG = white
+    LIGHT_GRAY = HexColor("#F8FAFC")
     GOLD = HexColor("#F4B942")
     ELECTRIC_BLUE = HexColor("#3B82F6")
     CYAN = HexColor("#06B6D4")
@@ -18,11 +19,18 @@ def generate_flowchart_pdf():
     PURPLE = HexColor("#8B5CF6")
     ROSE = HexColor("#F43F5E")
     AMBER = HexColor("#F59E0B")
-    SLATE = HexColor("#64748B")
+    DARK_TEXT = HexColor("#1E293B")
+    GRAY_TEXT = HexColor("#64748B")
     
-    # --- Background Gradient Effect ---
-    c.setFillColor(DARK_BG)
+    # --- Light Background ---
+    c.setFillColor(WHITE_BG)
     c.rect(0, 0, width, height, fill=1, stroke=0)
+    
+    # Subtle gradient effect with light gray
+    c.setFillColor(LIGHT_GRAY)
+    c.setFillAlpha(0.3)
+    c.rect(0, height - 1.5*inch, width, 1.5*inch, fill=1, stroke=0)
+    c.setFillAlpha(1)
     
     # --- Header Section ---
     c.setFont("Helvetica-Bold", 28)
@@ -37,14 +45,14 @@ def generate_flowchart_pdf():
                    width=logo_w, height=logo_h, mask='auto')
         
         c.setFont("Helvetica-Bold", 9)
-        c.setFillColor(CYAN)
+        c.setFillColor(ELECTRIC_BLUE)
         c.drawRightString(width - 1*inch, height - 1*inch, "Digitalization Partner")
         c.setFont("Helvetica", 8)
-        c.setFillColor(SLATE)
+        c.setFillColor(GRAY_TEXT)
         c.drawRightString(width - 1*inch, height - 1.15*inch, "SIP 2 LIFE Distilleries Pvt. Ltd.")
 
     c.setFont("Helvetica-Oblique", 12)
-    c.setFillColor(SLATE)
+    c.setFillColor(GRAY_TEXT)
     c.drawCentredString(width/2, height - 1*inch, "Ripple-Effect Automation Architecture")
     
     # Decorative line
@@ -55,14 +63,14 @@ def generate_flowchart_pdf():
     # Enhanced node drawing with shadow and gradient effect
     def draw_node(x, y, text, color, w=180, h=70, title="", icon=""):
         # Shadow
-        c.setFillColor(HexColor("#000000"))
-        c.setFillAlpha(0.2)
-        c.roundRect(x+3, y-3, w, h, 10, fill=1, stroke=0)
+        c.setFillColor(HexColor("#CBD5E1"))
+        c.setFillAlpha(0.4)
+        c.roundRect(x+4, y-4, w, h, 10, fill=1, stroke=0)
         c.setFillAlpha(1)
         
         # Main box
-        c.setStrokeColor(white)
-        c.setLineWidth(2)
+        c.setStrokeColor(HexColor("#334155"))
+        c.setLineWidth(2.5)
         c.setFillColor(color)
         c.roundRect(x, y, w, h, 10, fill=1, stroke=1)
         
@@ -169,7 +177,7 @@ def generate_flowchart_pdf():
     # --- Legend Box ---
     legend_x = 1*inch
     legend_y = 1.2*inch
-    c.setFillColor(HexColor("#1E293B"))
+    c.setFillColor(HexColor("#F1F5F9"))
     c.setStrokeColor(GOLD)
     c.setLineWidth(2)
     c.roundRect(legend_x, legend_y, 2.5*inch, 0.9*inch, 8, fill=1, stroke=1)
@@ -179,7 +187,7 @@ def generate_flowchart_pdf():
     c.drawString(legend_x + 0.15*inch, legend_y + 0.7*inch, "AUTOMATION LEGEND")
     
     c.setFont("Helvetica", 8)
-    c.setFillColor(white)
+    c.setFillColor(DARK_TEXT)
     c.drawString(legend_x + 0.15*inch, legend_y + 0.5*inch, "→ Solid Arrows: Real-time data push")
     c.drawString(legend_x + 0.15*inch, legend_y + 0.3*inch, "⟿ Dashed Lines: Compilation to Handbook")
     c.drawString(legend_x + 0.15*inch, legend_y + 0.1*inch, "🎨 Color-coded by function")
@@ -206,7 +214,7 @@ def generate_flowchart_pdf():
     
     # Footer text
     c.setFont("Helvetica-Oblique", 8)
-    c.setFillColor(SLATE)
+    c.setFillColor(GRAY_TEXT)
     c.drawString(1*inch, 0.5*inch, 
                  "Powered by Endress+Hauser Flow Measurement Technology")
     c.drawString(1*inch, 0.3*inch,
