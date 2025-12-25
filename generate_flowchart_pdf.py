@@ -196,34 +196,32 @@ def generate_flowchart_pdf():
     # --- Professional Footer Section ---
     # Footer background
     c.setFillColor(HexColor("#F8FAFC"))
-    c.rect(0, 0, width, 0.75*inch, fill=1, stroke=0)
+    c.rect(0, 0, width, 0.8*inch, fill=1, stroke=0)
     
     # Footer separator line
-    c.setStrokeColor(BORDER_GRAY)
-    c.setLineWidth(1)
-    c.line(0, 0.75*inch, width, 0.75*inch)
+    c.setStrokeColor(GOLD)
+    c.setLineWidth(1.5)
+    c.line(0, 0.8*inch, width, 0.8*inch)
     
-    # E+H Logo (small, bottom right - no background box)
+    # E+H Logo (bottom right - clean, no background)
     logo_path = "EndressHauser_logo-removebg-preview.png"
     if os.path.exists(logo_path):
-        # Logo without background box
-        logo_w, logo_h = 140, 35
-        logo_x = width - 2*inch
-        logo_y = 0.2*inch
+        logo_w, logo_h = 150, 38
+        logo_x = width - 2.2*inch
+        logo_y = 0.35*inch
         c.drawImage(logo_path, logo_x, logo_y, width=logo_w, height=logo_h, mask='auto')
     
-    # Footer text (left side)
-    c.setFont("Helvetica-Bold", 8)
-    c.setFillColor(NAVY)
-    c.drawString(0.5*inch, 0.45*inch, "Digitalization Partner:")
-    
+    # Footer text (left side - better spacing)
     c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(SKY_BLUE)
-    c.drawString(1.6*inch, 0.45*inch, "Endress+Hauser")
+    c.setFillColor(NAVY)
+    c.drawString(0.6*inch, 0.52*inch, "Digitalization Partner")
     
     c.setFont("Helvetica", 7)
     c.setFillColor(HexColor("#6B7280"))
-    c.drawString(0.5*inch, 0.25*inch, "Flow Measurement Technology • Process Automation • Regulatory Compliance Excellence")
+    c.drawString(0.6*inch, 0.32*inch, "Flow Measurement Technology")
+    
+    c.setFont("Helvetica", 7)
+    c.drawString(0.6*inch, 0.18*inch, "Process Automation • Regulatory Compliance Excellence")
 
     c.save()
     print(f"Successfully generated {filename}")
