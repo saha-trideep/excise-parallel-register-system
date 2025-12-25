@@ -21,13 +21,26 @@ def generate_flowchart_pdf():
     c.setFillColor(NAVY)
     c.drawCentredString(width/2, height - 1*inch, "Excise Parallel Register System")
     
+    # Endress+Hauser Branding
+    logo_path = "EndressHauser_logo-removebg-preview.png"
+    if os.path.exists(logo_path):
+        # Draw logo at top right
+        logo_w, logo_h = 180, 45
+        c.drawImage(logo_path, width - 1*inch - logo_w, height - 1*inch, width=logo_w, height=logo_h, mask='auto')
+        
+        c.setFont("Helvetica-BoldOblique", 10)
+        c.setFillColor(NAVY)
+        c.drawRightString(width - 1*inch, height - 1.2*inch, "Working for Endress+Hauser")
+        c.setFont("Helvetica", 9)
+        c.drawRightString(width - 1*inch, height - 1.4*inch, "Business Partner: SIP 2 LIFE Distilleries Pvt. Ltd.")
+
     c.setFont("Helvetica", 14)
     c.setFillColor(black)
     c.drawCentredString(width/2, height - 1.3*inch, "Professional Ripple-Effect Automation Flowchart")
     
     c.setLineWidth(2)
     c.setStrokeColor(HEADER_GOLD)
-    c.line(1*inch, height - 1.5*inch, width - 1*inch, height - 1.5*inch)
+    c.line(1*inch, height - 1.6*inch, width - 1*inch, height - 1.6*inch)
 
     # Helper function for boxes
     def draw_node(x, y, text, color, w=160, h=60, title=""):

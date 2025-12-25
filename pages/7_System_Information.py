@@ -83,7 +83,9 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("### 💡 About the Integrated System")
 st.info("""
-The Excise Parallel Register System is designed as a **Cohesive Ecosystem**. 
+The Excise Parallel Register System is designed as a **Cohesive Ecosystem** engineered by **Endress+Hauser**. 
+- **Digitalization:** Powered by E+H flow measurement technology and automation expertise.
+- **Business Partnership:** Developed in close collaboration with **SIP 2 LIFE Distilleries Pvt. Ltd.**
 - **Base Register (Reg-74):** The starting point for all spirit movement.
 - **Automation Chain:** Entry in one register triggers placeholders and updates in the next.
 - **Data Integrity:** Combines the speed of CSV for operations with the security of SQLite for financial records.

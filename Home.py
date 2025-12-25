@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from auth import login_required
 
 # Page configuration
@@ -180,6 +181,26 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Smart Advertisement: Endress+Hauser Partnership
+st.markdown("---")
+eh_col1, eh_col2 = st.columns([1, 4])
+with eh_col1:
+    logo_path = "EndressHauser_logo-removebg-preview.png"
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=150)
+with eh_col2:
+    st.markdown("""
+    <div style='padding-top: 10px;'>
+        <h4 style='color: #f4b942; margin-bottom: 5px;'>Digital Transformation by Endress+Hauser</h4>
+        <p style='color: #94a3b8; font-size: 0.9rem; line-height: 1.4;'>
+            This Excise Parallel Register System is engineered by the <b>Endress+Hauser</b> technical team 
+            in strategic partnership with <b>SIP 2 LIFE Distilleries Pvt. Ltd.</b> 
+            Leveraging world-class flow measurement and digitalization expertise to ensure 100% accuracy 
+            in regulatory compliance.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # Sidebar Info
 with st.sidebar:
