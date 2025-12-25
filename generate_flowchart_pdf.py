@@ -9,112 +9,186 @@ def generate_flowchart_pdf():
     c = canvas.Canvas(filename, pagesize=landscape(A4))
     width, height = landscape(A4)
 
-    # Colors (Consistent with Handbook V2)
-    HEADER_GOLD = HexColor("#F4B942")
-    NAVY = HexColor("#2C3E50")
-    LIGHT_BLUE = HexColor("#D6EAF8")
-    MEDIUM_BLUE = HexColor("#85C1E9")
-    SUCCESS_GREEN = HexColor("#D1FAE5")
-
-    # --- Draw Background & Header ---
-    c.setFont("Helvetica-Bold", 24)
-    c.setFillColor(NAVY)
-    c.drawCentredString(width/2, height - 1*inch, "Excise Parallel Register System")
+    # Modern Color Palette - Vibrant & Professional
+    DARK_BG = HexColor("#0F172A")
+    GOLD = HexColor("#F4B942")
+    ELECTRIC_BLUE = HexColor("#3B82F6")
+    CYAN = HexColor("#06B6D4")
+    EMERALD = HexColor("#10B981")
+    PURPLE = HexColor("#8B5CF6")
+    ROSE = HexColor("#F43F5E")
+    AMBER = HexColor("#F59E0B")
+    SLATE = HexColor("#64748B")
     
-    # Endress+Hauser Branding
+    # --- Background Gradient Effect ---
+    c.setFillColor(DARK_BG)
+    c.rect(0, 0, width, height, fill=1, stroke=0)
+    
+    # --- Header Section ---
+    c.setFont("Helvetica-Bold", 28)
+    c.setFillColor(GOLD)
+    c.drawCentredString(width/2, height - 0.7*inch, "EXCISE PARALLEL REGISTER SYSTEM")
+    
+    # Endress+Hauser Logo
     logo_path = "EndressHauser_logo-removebg-preview.png"
     if os.path.exists(logo_path):
-        # Draw logo at top right
-        logo_w, logo_h = 180, 45
-        c.drawImage(logo_path, width - 1*inch - logo_w, height - 1*inch, width=logo_w, height=logo_h, mask='auto')
+        logo_w, logo_h = 200, 50
+        c.drawImage(logo_path, width - 1*inch - logo_w, height - 0.8*inch, 
+                   width=logo_w, height=logo_h, mask='auto')
         
-        c.setFont("Helvetica-BoldOblique", 10)
-        c.setFillColor(NAVY)
-        c.drawRightString(width - 1*inch, height - 1.2*inch, "Working for Endress+Hauser")
-        c.setFont("Helvetica", 9)
-        c.drawRightString(width - 1*inch, height - 1.4*inch, "Business Partner: SIP 2 LIFE Distilleries Pvt. Ltd.")
+        c.setFont("Helvetica-Bold", 9)
+        c.setFillColor(CYAN)
+        c.drawRightString(width - 1*inch, height - 1*inch, "Digitalization Partner")
+        c.setFont("Helvetica", 8)
+        c.setFillColor(SLATE)
+        c.drawRightString(width - 1*inch, height - 1.15*inch, "SIP 2 LIFE Distilleries Pvt. Ltd.")
 
-    c.setFont("Helvetica", 14)
-    c.setFillColor(black)
-    c.drawCentredString(width/2, height - 1.3*inch, "Professional Ripple-Effect Automation Flowchart")
+    c.setFont("Helvetica-Oblique", 12)
+    c.setFillColor(SLATE)
+    c.drawCentredString(width/2, height - 1*inch, "Ripple-Effect Automation Architecture")
     
-    c.setLineWidth(2)
-    c.setStrokeColor(HEADER_GOLD)
-    c.line(1*inch, height - 1.6*inch, width - 1*inch, height - 1.6*inch)
+    # Decorative line
+    c.setLineWidth(3)
+    c.setStrokeColor(GOLD)
+    c.line(1.5*inch, height - 1.3*inch, width - 1.5*inch, height - 1.3*inch)
 
-    # Helper function for boxes
-    def draw_node(x, y, text, color, w=160, h=60, title=""):
-        c.setStrokeColor(black)
-        c.setFillColor(color)
-        c.roundRect(x, y, w, h, 8, fill=1, stroke=1)
+    # Enhanced node drawing with shadow and gradient effect
+    def draw_node(x, y, text, color, w=180, h=70, title="", icon=""):
+        # Shadow
+        c.setFillColor(HexColor("#000000"))
+        c.setFillAlpha(0.2)
+        c.roundRect(x+3, y-3, w, h, 10, fill=1, stroke=0)
+        c.setFillAlpha(1)
         
-        c.setFillColor(black)
-        c.setFont("Helvetica-Bold", 10)
-        c.drawCentredString(x + w/2, y + h/2 + 5, title)
+        # Main box
+        c.setStrokeColor(white)
+        c.setLineWidth(2)
+        c.setFillColor(color)
+        c.roundRect(x, y, w, h, 10, fill=1, stroke=1)
+        
+        # Icon/Emoji
+        if icon:
+            c.setFont("Helvetica", 20)
+            c.setFillColor(white)
+            c.drawCentredString(x + w/2, y + h - 25, icon)
+        
+        # Title
+        c.setFillColor(white)
+        c.setFont("Helvetica-Bold", 11)
+        c.drawCentredString(x + w/2, y + h/2 + 8, title)
+        
+        # Description
         c.setFont("Helvetica", 9)
-        c.drawCentredString(x + w/2, y + h/2 - 10, text)
+        c.drawCentredString(x + w/2, y + h/2 - 8, text)
+        
         return x, y, w, h
 
-    def draw_arrow(x1, y1, x2, y2):
-        c.setStrokeColor(black)
-        c.setLineWidth(1.5)
+    def draw_arrow(x1, y1, x2, y2, color=CYAN, width=2.5):
+        c.setStrokeColor(color)
+        c.setLineWidth(width)
         c.line(x1, y1, x2, y2)
-        # Simple arrowhead
-        if x1 < x2: # Horizontal Right
-            c.line(x2, y2, x2-10, y2+5)
-            c.line(x2, y2, x2-10, y2-5)
-        elif y1 > y2: # Vertical Down
-            c.line(x2, y2, x2-5, y2+10)
-            c.line(x2, y2, x2+5, y2+10)
+        
+        # Enhanced arrowhead
+        if x1 < x2:  # Horizontal Right
+            c.setFillColor(color)
+            c.setStrokeColor(color)
+            c.setLineWidth(1)
+            points = [(x2, y2), (x2-12, y2+6), (x2-12, y2-6)]
+            p = c.beginPath()
+            p.moveTo(points[0][0], points[0][1])
+            for point in points[1:]:
+                p.lineTo(point[0], point[1])
+            p.close()
+            c.drawPath(p, fill=1, stroke=1)
+        elif y1 > y2:  # Vertical Down
+            c.setFillColor(color)
+            c.setStrokeColor(color)
+            c.setLineWidth(1)
+            points = [(x2, y2), (x2-6, y2+12), (x2+6, y2+12)]
+            p = c.beginPath()
+            p.moveTo(points[0][0], points[0][1])
+            for point in points[1:]:
+                p.lineTo(point[0], point[1])
+            p.close()
+            c.drawPath(p, fill=1, stroke=1)
 
-    # --- Draw Nodes ---
+    # --- Draw Nodes with Modern Layout ---
     
-    # Base Layer
-    node_76 = draw_node(50, height - 2.8*inch, "Tanker Arrival & Unloading", LIGHT_BLUE, title="Reg-76: Spirit Receipt")
-    node_74 = draw_node(280, height - 2.8*inch, "Base Source of Truth", HEADER_GOLD, title="Reg-74: Spirit Operations", w=200, h=70)
+    # Input Layer
+    node_76 = draw_node(40, height - 2.5*inch, "Tanker Unloading", PURPLE, 
+                       title="Reg-76", icon="🚛", w=150, h=75)
+    
+    # Core Processing
+    node_74 = draw_node(250, height - 2.5*inch, "Base Source of Truth", GOLD, 
+                       title="Reg-74: Operations", icon="🏭", w=220, h=85)
     
     # Production Layer
-    node_a = draw_node(280, height - 4.5*inch, "Bottling & MFM2 Tracking", SUCCESS_GREEN, title="Reg-A: Production", w=200)
+    node_a = draw_node(250, height - 4.3*inch, "Bottling & MFM2", EMERALD, 
+                      title="Reg-A: Production", icon="🍾", w=220, h=75)
     
-    # Finishes Layer
-    node_b = draw_node(280, height - 6.2*inch, "Fees & Inventory", MEDIUM_BLUE, title="Reg-B: Finished Stock", w=200)
-    node_78 = draw_node(540, height - 4.5*inch, "Daily Performance Report", LIGHT_BLUE, title="Reg-78: Daily Synopsis")
-    node_duty = draw_node(540, height - 6.2*inch, "Financial Tax Ledger", LIGHT_BLUE, title="Excise Duty Register")
+    # Output Layer
+    node_b = draw_node(250, height - 6*inch, "Inventory Control", ELECTRIC_BLUE, 
+                      title="Reg-B: Stock", icon="📦", w=220, h=75)
+    
+    node_78 = draw_node(530, height - 4.3*inch, "Daily Synopsis", CYAN, 
+                       title="Reg-78", icon="📊", w=180, h=75)
+    
+    node_duty = draw_node(530, height - 6*inch, "Tax Ledger", ROSE, 
+                         title="Excise Duty", icon="💰", w=180, h=75)
     
     # Final Output
-    node_hb = draw_node(300, 0.5*inch, "Professional Console PDF", HEADER_GOLD, title="📚 DAILY HANDBOOK V2", w=210, h=80)
+    node_hb = draw_node(280, 0.6*inch, "Consolidated Report", AMBER, 
+                       title="📚 DAILY HANDBOOK", icon="📄", w=250, h=90)
 
-    # --- Draw Connections (Arrows) ---
+    # --- Draw Enhanced Connections ---
     # 76 -> 74
-    draw_arrow(210, height - 2.8*inch + 30, 280, height - 2.8*inch + 30)
+    draw_arrow(190, height - 2.5*inch + 37, 250, height - 2.5*inch + 37, PURPLE, 3)
     
     # 74 -> A
-    draw_arrow(380, height - 2.8*inch, 380, height - 4.5*inch + 60)
+    draw_arrow(360, height - 2.5*inch, 360, height - 4.3*inch + 75, GOLD, 3)
     
     # A -> B
-    draw_arrow(380, height - 4.5*inch, 380, height - 6.2*inch + 60)
+    draw_arrow(360, height - 4.3*inch, 360, height - 6*inch + 75, EMERALD, 3)
     
     # A -> 78
-    draw_arrow(480, height - 4.5*inch + 30, 540, height - 4.5*inch + 30)
+    draw_arrow(470, height - 4.3*inch + 37, 530, height - 4.3*inch + 37, EMERALD, 2.5)
     
     # B -> Duty
-    draw_arrow(480, height - 6.2*inch + 30, 540, height - 6.2*inch + 30)
+    draw_arrow(470, height - 6*inch + 37, 530, height - 6*inch + 37, ELECTRIC_BLUE, 2.5)
     
-    # Final connections to Handbook
-    c.setDash(3, 3) # Dashed lines for compilation
-    c.line(540, height - 4.5*inch, 510, 0.5*inch+80)
-    c.line(540, height - 6.2*inch, 510, 0.5*inch+80)
-    c.line(380, height - 6.2*inch, 380, 0.5*inch+80)
-    c.line(node_74[0], node_74[1], 300, 0.5*inch+80)
-
-    # Legend
+    # Convergence to Handbook (dashed lines)
+    c.setDash([5, 3])
+    c.setStrokeColor(AMBER)
+    c.setLineWidth(2)
+    c.line(620, height - 4.3*inch + 20, 530, 0.6*inch+90)
+    c.line(620, height - 6*inch + 20, 530, 0.6*inch+90)
+    c.line(360, height - 6*inch, 360, 0.6*inch+90)
+    c.line(360, height - 2.5*inch, 320, 0.6*inch+90)
     c.setDash([])
+
+    # --- Legend Box ---
+    legend_x = 1*inch
+    legend_y = 1.2*inch
+    c.setFillColor(HexColor("#1E293B"))
+    c.setStrokeColor(GOLD)
+    c.setLineWidth(2)
+    c.roundRect(legend_x, legend_y, 2.5*inch, 0.9*inch, 8, fill=1, stroke=1)
+    
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(1*inch, 1*inch, "Automation Legend:")
-    c.setFont("Helvetica", 9)
-    c.drawString(1*inch, 0.8*inch, "• Solid Arrows = Real-time data push")
-    c.drawString(1*inch, 0.6*inch, "• Gold Nodes = Critical Base Registers")
-    c.drawString(1*inch, 0.4*inch, "• Green/Blue Nodes = Automated Output")
+    c.setFillColor(GOLD)
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.7*inch, "AUTOMATION LEGEND")
+    
+    c.setFont("Helvetica", 8)
+    c.setFillColor(white)
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.5*inch, "→ Solid Arrows: Real-time data push")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.3*inch, "⟿ Dashed Lines: Compilation to Handbook")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.1*inch, "🎨 Color-coded by function")
+
+    # Footer
+    c.setFont("Helvetica-Oblique", 8)
+    c.setFillColor(SLATE)
+    c.drawCentredString(width/2, 0.3*inch, 
+                       "Powered by Endress+Hauser Flow Measurement Technology • Regulatory Compliance Excellence")
 
     c.save()
     print(f"Successfully generated {filename}")
