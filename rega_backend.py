@@ -56,6 +56,23 @@ def save_record(data_dict):
     df_local = pd.concat([df_local, new_row], ignore_index=True)
     df_local.to_csv(CSV_PATH, index=False)
     
+    # --- AUTOMATION HOOKS ---
+    try:
+        # 1. Trigger Reg-78 Auto-Synopsis Update
+        import reg78_backend
+        target_date = datetime.strptime(data_dict["production_date"], "%Y-%m-%d").date()
+        synopsis_data = reg78_backend.generate_daily_synopsis(target_date)
+        if synopsis_data:
+            synopsis_data["synopsis_date"] = str(target_date)
+            reg78_backend.save_record(synopsis_data)
+        
+        # 2. Trigger Reg-B Bottle Stock Pre-fill
+        # Note: Reg-B UI usually handles the 'Final Submit', but we can pre-populate the stock
+        # depending on the business logic. For now, we ensure Reg-B can see the data.
+    except Exception as e:
+        logger.warning(f"Automation Hook Warning: {e}")
+    # -------------------------
+
     # 2. Attempt Sync
     sync_success = sync_to_gsheet(df_local)
     

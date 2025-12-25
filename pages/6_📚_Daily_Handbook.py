@@ -175,6 +175,48 @@ with col1:
             st.rerun()
     
     st.markdown("---")
+
+    # --- SIDEBAR SYSTEM CONTROL ---
+    with st.sidebar:
+        st.markdown("### 🛠️ System Control")
+        if st.button("🔄 System-Wide Sync", help="Pull latest data from all physical registers to update the Handbook summaries", use_container_width=True):
+            with st.spinner("Synchronizing all registers..."):
+                try:
+                    import reg78_backend
+                    import regb_backend
+                    import excise_duty_backend
+                    
+                    # 1. Update Reg-78 Synopsis
+                    synopsis = reg78_backend.generate_daily_synopsis(handbook_date)
+                    if synopsis:
+                        synopsis["synopsis_date"] = str(handbook_date)
+                        reg78_backend.save_record(synopsis)
+                    
+                    # 2. Update Reg-B Statistics
+                    regb_summary = regb_backend.generate_daily_summary(handbook_date)
+                    if regb_summary:
+                        regb_backend.save_daily_summary(regb_summary)
+                    
+                    # 3. Update Excise Duty Summary
+                    duty_summary = excise_duty_backend.generate_duty_summary(handbook_date)
+                    if duty_summary:
+                        excise_duty_backend.save_duty_summary(duty_summary)
+                        
+                    st.success("✅ System-Wide Sync Complete!")
+                    time.sleep(1)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Sync Error: {e}")
+
+        st.divider()
+        st.info("""
+        **Data Integration Status:**
+        - Reg-76-74-A: ✅ CSV
+        - Reg-78: ✅ Auto-Fill
+        - Reg-B:  ✅ SQLite
+        - Duty:   ✅ SQLite
+        """)
+    # -----------------------------
     
     # Handbook sections info
     st.markdown("### 📋 Handbook Sections")
@@ -210,9 +252,16 @@ with col2:
     st.markdown("<br>", unsafe_allow_html=True)
     
     # Generate button
-    if st.button("🚀 Generate Handbook", type="primary", use_container_width=True):
-        with st.spinner("📄 Generating professional handbook..."):
+    if st.button("🚀 Generate Handbook V2", type="primary", use_container_width=True):
+        with st.spinner("📄 Analyzing all registers and generating professional PDF..."):
             try:
+                # AUTOMATION: Sync before generation to ensure accuracy
+                import reg78_backend
+                syn = reg78_backend.generate_daily_synopsis(handbook_date)
+                if syn:
+                    syn["synopsis_date"] = str(handbook_date)
+                    reg78_backend.save_record(syn)
+                
                 # Generate handbook
                 generator = EnhancedHandbookGenerator(handbook_date)
                 output_file = generator.generate_handbook()
@@ -220,7 +269,7 @@ with col2:
                 # Success message
                 st.markdown(f"""
                 <div class='success-box'>
-                    <strong>✅ Handbook Generated Successfully!</strong><br>
+                    <strong>✅ Handbook V2 Generated!</strong><br>
                     <small>File: {output_file}</small>
                 </div>
                 """, unsafe_allow_html=True)
@@ -228,6 +277,7 @@ with col2:
                 # Store in session state
                 st.session_state['generated_file'] = output_file
                 st.session_state['generated_date'] = handbook_date
+                st.balloons()
                 
             except Exception as e:
                 st.error(f"❌ Error generating handbook: {str(e)}")
@@ -270,10 +320,8 @@ st.markdown("### 📊 Quick Statistics")
 stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
 
 try:
-    import sqlite3
     import pandas as pd
-    
-    conn = sqlite3.connect('excise_registers.db')
+    import os
     
     # Get statistics
     with stat_col1:
@@ -287,48 +335,49 @@ try:
         """, unsafe_allow_html=True)
     
     with stat_col2:
-        # Production records
-        query = "SELECT COUNT(*) as count FROM rega_data"
-        result = pd.read_sql_query(query, conn)
-        count = result['count'].iloc[0] if not result.empty else 0
+        # Production records - Read from CSV
+        count = 0
+        if os.path.exists("rega_data.csv"):
+            rega_df = pd.read_csv("rega_data.csv")
+            count = len(rega_df)
         
         st.markdown(f"""
         <div class='metric-card'>
             <div class='metric-label'>Production Records</div>
             <div class='metric-value'>{count}</div>
-            <small style='color: #cbd5e0;'>Total in database</small>
+            <small style='color: #cbd5e0;'>Reg-A (CSV)</small>
         </div>
         """, unsafe_allow_html=True)
     
     with stat_col3:
-        # Reg-74 operations
-        query = "SELECT COUNT(*) as count FROM reg74_data"
-        result = pd.read_sql_query(query, conn)
-        count = result['count'].iloc[0] if not result.empty else 0
+        # Reg-74 operations - Read from CSV
+        count = 0
+        if os.path.exists("reg74_data.csv"):
+            reg74_df = pd.read_csv("reg74_data.csv")
+            count = len(reg74_df)
         
         st.markdown(f"""
         <div class='metric-card'>
             <div class='metric-label'>Reg-74 Operations</div>
             <div class='metric-value'>{count}</div>
-            <small style='color: #cbd5e0;'>Total operations</small>
+            <small style='color: #cbd5e0;'>Spirit Operations</small>
         </div>
         """, unsafe_allow_html=True)
     
     with stat_col4:
-        # Reg-76 receipts
-        query = "SELECT COUNT(*) as count FROM reg76_data"
-        result = pd.read_sql_query(query, conn)
-        count = result['count'].iloc[0] if not result.empty else 0
+        # Reg-76 receipts - Read from CSV
+        count = 0
+        if os.path.exists("reg76_data.csv"):
+            reg76_df = pd.read_csv("reg76_data.csv")
+            count = len(reg76_df)
         
         st.markdown(f"""
         <div class='metric-card'>
             <div class='metric-label'>Spirit Receipts</div>
             <div class='metric-value'>{count}</div>
-            <small style='color: #cbd5e0;'>Reg-76 records</small>
+            <small style='color: #cbd5e0;'>Reg-76 Records</small>
         </div>
         """, unsafe_allow_html=True)
-    
-    conn.close()
     
 except Exception as e:
     st.warning("⚠️ Unable to load statistics. Database may be empty.")

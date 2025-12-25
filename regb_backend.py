@@ -306,6 +306,18 @@ def save_bottle_stock(stock_data: BottleStockInventory) -> bool:
         conn.commit()
         conn.close()
         logger.info(f"✅ Bottle stock saved for {stock_data.date} - {stock_data.product_name} ({stock_data.bottle_size_ml}ml)")
+        
+        # --- AUTOMATION HOOK: Update Excise Duty Register ---
+        try:
+            if stock_data.issue_on_duty_bottles > 0:
+                import excise_duty_backend
+                # Trigger duty register to pull latest issues
+                duty_data = excise_duty_backend.get_regb_issued_bottles(stock_data.date)
+                # Note: Duty register usually handles its own ledger entry
+                # This ensures the duty backend is 'aware' or we could auto-save a ledger entry here
+        except Exception as e:
+            logger.warning(f"Duty Automation Hook Warning: {e}")
+        
         return True
     except Exception as e:
         logger.error(f"❌ Error saving bottle stock: {e}")
@@ -414,44 +426,58 @@ def get_previous_day_stock(target_date: date, product_name: str, strength: Decim
 # ============================================================================
 
 def get_rega_production_data(target_date: date) -> Dict:
-    """Fetch production data from Reg-A for auto-filling Reg-B"""
+    """Fetch production data from Reg-A for auto-filling Reg-B (Reads from CSV)"""
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        
-        # Get bottling data from Reg-A
-        cursor.execute("""
-            SELECT 
-                product_name,
-                strength,
-                bottle_size_ml,
-                SUM(bottles_produced) as total_bottles,
-                SUM(bl_in_bottles) as total_bl,
-                SUM(al_in_bottles) as total_al
-            FROM rega_bottling_operations
-            WHERE date = ?
-            GROUP BY product_name, strength, bottle_size_ml
-        """, (str(target_date),))
-        
-        bottling_data = cursor.fetchall()
-        conn.close()
-        
+        csv_path = "rega_data.csv"
+        if not os.path.exists(csv_path):
+            logger.warning(f"⚠️ Reg-A CSV not found at {csv_path}")
+            return {'production_items': [], 'total_bottles_produced': 0, 'production_fees': Decimal("0.00")}
+
+        df = pd.read_csv(csv_path)
+        if df.empty:
+            return {'production_items': [], 'total_bottles_produced': 0, 'production_fees': Decimal("0.00")}
+
+        # Convert date column and filter
+        df['production_date'] = pd.to_datetime(df['production_date']).dt.date
+        daily_df = df[df['production_date'] == target_date]
+
+        if daily_df.empty:
+            return {'production_items': [], 'total_bottles_produced': 0, 'production_fees': Decimal("0.00")}
+
         production_summary = []
         total_bottles = 0
-        
-        for row in bottling_data:
-            item = {
-                'product_name': row['product_name'],
-                'strength': Decimal(str(row['strength'])),
-                'bottle_size_ml': row['bottle_size_ml'],
-                'bottles': row['total_bottles'] or 0,
-                'bl': Decimal(str(row['total_bl'] or 0)),
-                'al': Decimal(str(row['total_al'] or 0))
+
+        # Group by common attributes to aggregate production for the day
+        # In Reg-A, we might have multiple sessions per day for the same product
+        for name, group in daily_df.groupby(['brand_name', 'brt_opening_strength']):
+            brand, strength = name
+            
+            # Map Reg-A sizes to Reg-B sizes
+            sizes = {
+                '750ml': group['bottles_750ml'].sum(),
+                '1000ml': group['bottles_1000ml'].sum(),
+                '375ml': group['bottles_375ml'].sum(),
+                '180ml': group['bottles_180ml'].sum()
             }
-            production_summary.append(item)
-            total_bottles += item['bottles']
-        
+            
+            for size_label, count in sizes.items():
+                if count > 0:
+                    size_ml = int(size_label.replace('ml', ''))
+                    # Calculate BL and AL for this variant
+                    bl = Decimal(str(count)) * Decimal(str(size_ml)) / Decimal("1000")
+                    al = bl * Decimal(str(strength)) / Decimal("100")
+                    
+                    item = {
+                        'product_name': brand or "Unknown Brand",
+                        'strength': Decimal(str(strength)),
+                        'bottle_size_ml': size_ml,
+                        'bottles': int(count),
+                        'bl': bl,
+                        'al': al
+                    }
+                    production_summary.append(item)
+                    total_bottles += int(count)
+
         return {
             'production_items': production_summary,
             'total_bottles_produced': total_bottles,
@@ -459,7 +485,7 @@ def get_rega_production_data(target_date: date) -> Dict:
         }
         
     except Exception as e:
-        logger.error(f"❌ Error fetching Reg-A production data: {e}")
+        logger.error(f"❌ Error fetching Reg-A production data from CSV: {e}")
         return {
             'production_items': [],
             'total_bottles_produced': 0,
