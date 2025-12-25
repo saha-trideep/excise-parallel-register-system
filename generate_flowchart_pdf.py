@@ -184,11 +184,33 @@ def generate_flowchart_pdf():
     c.drawString(legend_x + 0.15*inch, legend_y + 0.3*inch, "⟿ Dashed Lines: Compilation to Handbook")
     c.drawString(legend_x + 0.15*inch, legend_y + 0.1*inch, "🎨 Color-coded by function")
 
-    # Footer
+    # --- Footer with E+H Logo ---
+    # Sky blue background box for logo
+    footer_box_x = width - 3*inch
+    footer_box_y = 0.2*inch
+    footer_box_w = 2.5*inch
+    footer_box_h = 0.8*inch
+    
+    c.setFillColor(HexColor("#87CEEB"))  # Sky blue background
+    c.setStrokeColor(HexColor("#4A90A4"))  # Darker blue border
+    c.setLineWidth(1.5)
+    c.roundRect(footer_box_x, footer_box_y, footer_box_w, footer_box_h, 8, fill=1, stroke=1)
+    
+    # Draw E+H logo on sky blue background
+    if os.path.exists(logo_path):
+        logo_footer_w = 180
+        logo_footer_h = 45
+        logo_x = footer_box_x + (footer_box_w - logo_footer_w) / 2
+        logo_y = footer_box_y + (footer_box_h - logo_footer_h) / 2
+        c.drawImage(logo_path, logo_x, logo_y, width=logo_footer_w, height=logo_footer_h, mask='auto')
+    
+    # Footer text
     c.setFont("Helvetica-Oblique", 8)
     c.setFillColor(SLATE)
-    c.drawCentredString(width/2, 0.3*inch, 
-                       "Powered by Endress+Hauser Flow Measurement Technology • Regulatory Compliance Excellence")
+    c.drawString(1*inch, 0.5*inch, 
+                 "Powered by Endress+Hauser Flow Measurement Technology")
+    c.drawString(1*inch, 0.3*inch,
+                 "Regulatory Compliance Excellence • Digital Transformation Partner")
 
     c.save()
     print(f"Successfully generated {filename}")
