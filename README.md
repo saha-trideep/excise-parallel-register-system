@@ -90,7 +90,8 @@ excise-parallel-register-system/
 ├── Home.py                          # Main landing page
 ├── pages/
 │   ├── 1_📦_Reg_B.py               # Reg-B register
-│   └── 2_💰_Excise_Duty.py         # Excise Duty register
+│   ├── 2_💰_Excise_Duty.py         # Excise Duty register
+│   └── 6_📚_Daily_Handbook.py      # Daily Handbook Generator
 ├── regb_schema.py                   # Reg-B data models
 ├── regb_backend.py                  # Reg-B database operations
 ├── regb_utils.py                    # Reg-B utilities
@@ -181,7 +182,7 @@ Duty = BL × Duty Rate (based on strength)
 - [x] Premium UI with gradients
 - [x] Responsive design
 - [x] Export-ready data tables
-- [ ] PDF export (planned)
+- [x] PDF export (Daily Handbook)
 - [ ] Digital signatures (planned)
 - [ ] Multi-user authentication (planned)
 
