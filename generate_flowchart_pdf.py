@@ -30,25 +30,22 @@ def generate_flowchart_pdf():
     # Title
     c.setFont("Helvetica-Bold", 26)
     c.setFillColor(NAVY)
-    c.drawCentredString(width/2, height - 0.6*inch, "EXCISE PARALLEL REGISTER SYSTEM")
+    c.drawCentredString(width/2, height - 0.55*inch, "EXCISE PARALLEL REGISTER SYSTEM")
+    
+    # Customer name (centered below title)
+    c.setFont("Helvetica-Bold", 11)
+    c.setFillColor(DARK_TEXT)
+    c.drawCentredString(width/2, height - 0.8*inch, "SIP 2 LIFE Distilleries Pvt. Ltd.")
     
     # Subtitle
-    c.setFont("Helvetica", 11)
-    c.setFillColor(DARK_TEXT)
-    c.drawCentredString(width/2, height - 0.85*inch, "Automated Data Flow Architecture")
-    
-    # Customer name in top right
-    c.setFont("Helvetica-Bold", 10)
-    c.setFillColor(NAVY)
-    c.drawRightString(width - 0.5*inch, height - 0.6*inch, "SIP 2 LIFE Distilleries Pvt. Ltd.")
-    c.setFont("Helvetica", 8)
-    c.setFillColor(DARK_TEXT)
-    c.drawRightString(width - 0.5*inch, height - 0.8*inch, "Regulatory Compliance System")
+    c.setFont("Helvetica-Oblique", 9)
+    c.setFillColor(HexColor("#6B7280"))
+    c.drawCentredString(width/2, height - 0.98*inch, "Automated Data Flow Architecture")
     
     # Header separator line
     c.setStrokeColor(GOLD)
     c.setLineWidth(2)
-    c.line(1.5*inch, height - 1*inch, width - 1.5*inch, height - 1*inch)
+    c.line(1.5*inch, height - 1.1*inch, width - 1.5*inch, height - 1.1*inch)
 
     # --- Enhanced Node Drawing Function ---
     def draw_node(x, y, text, color, w=200, h=75, title="", icon=""):
@@ -125,29 +122,29 @@ def generate_flowchart_pdf():
     
     # Layer 1: Input
     node_76 = draw_node(60, height - 2.3*inch, "Spirit Receipt", PURPLE, 
-                       title="REG-76", icon="🚛", w=180, h=70)
+                       title="REG-76", w=180, h=70)
     
     # Layer 2: Core Operations
     node_74 = draw_node(310, height - 2.3*inch, "Base Operations", NAVY, 
-                       title="REG-74", icon="🏭", w=200, h=80)
+                       title="REG-74", w=200, h=80)
     
     # Layer 3: Production
     node_a = draw_node(310, height - 3.8*inch, "Production & Bottling", EMERALD, 
-                      title="REG-A", icon="🍾", w=200, h=70)
+                      title="REG-A", w=200, h=70)
     
     # Layer 4: Inventory & Financial
     node_b = draw_node(310, height - 5.2*inch, "Stock Management", SKY_BLUE, 
-                      title="REG-B", icon="📦", w=200, h=70)
+                      title="REG-B", w=200, h=70)
     
     node_78 = draw_node(570, height - 3.8*inch, "Daily Synopsis", AMBER, 
-                       title="REG-78", icon="📊", w=180, h=70)
+                       title="REG-78", w=180, h=70)
     
     node_duty = draw_node(570, height - 5.2*inch, "Duty Ledger", ROSE, 
-                         title="EXCISE DUTY", icon="💰", w=180, h=70)
+                         title="EXCISE DUTY", w=180, h=70)
     
     # Layer 5: Final Output
     node_hb = draw_node(290, height - 6.7*inch, "Consolidated Report", GOLD, 
-                       title="DAILY HANDBOOK", icon="📚", w=240, h=85)
+                       title="DAILY HANDBOOK", w=240, h=85)
 
     # --- Draw Data Flow Arrows ---
     # 76 -> 74
@@ -196,37 +193,36 @@ def generate_flowchart_pdf():
     c.drawString(legend_x + 0.15*inch, legend_y + 0.35*inch, "📊 Automated sync")
     c.drawString(legend_x + 0.15*inch, legend_y + 0.2*inch, "🔄 Ripple-effect automation")
 
-    # --- Footer with E+H Advertisement ---
+    # --- Professional Footer Section ---
+    # Footer background
+    c.setFillColor(HexColor("#F8FAFC"))
+    c.rect(0, 0, width, 0.75*inch, fill=1, stroke=0)
+    
     # Footer separator line
     c.setStrokeColor(BORDER_GRAY)
-    c.setLineWidth(0.5)
-    c.line(0.5*inch, 0.7*inch, width - 0.5*inch, 0.7*inch)
+    c.setLineWidth(1)
+    c.line(0, 0.75*inch, width, 0.75*inch)
     
-    # E+H Logo (small, bottom right)
+    # E+H Logo (small, bottom right - no background box)
     logo_path = "EndressHauser_logo-removebg-preview.png"
     if os.path.exists(logo_path):
-        # Small sky blue background box
-        logo_box_x = width - 2.3*inch
-        logo_box_y = 0.15*inch
-        logo_box_w = 1.8*inch
-        logo_box_h = 0.5*inch
-        
-        c.setFillColor(HexColor("#E0F2FE"))  # Light sky blue
-        c.setStrokeColor(SKY_BLUE)
-        c.setLineWidth(1)
-        c.roundRect(logo_box_x, logo_box_y, logo_box_w, logo_box_h, 5, fill=1, stroke=1)
-        
-        # Small logo
+        # Logo without background box
         logo_w, logo_h = 140, 35
-        logo_x = logo_box_x + (logo_box_w - logo_w) / 2
-        logo_y = logo_box_y + (logo_box_h - logo_h) / 2
+        logo_x = width - 2*inch
+        logo_y = 0.2*inch
         c.drawImage(logo_path, logo_x, logo_y, width=logo_w, height=logo_h, mask='auto')
     
     # Footer text (left side)
-    c.setFont("Helvetica-Oblique", 7)
+    c.setFont("Helvetica-Bold", 8)
+    c.setFillColor(NAVY)
+    c.drawString(0.5*inch, 0.45*inch, "Digitalization Partner:")
+    
+    c.setFont("Helvetica-Bold", 9)
+    c.setFillColor(SKY_BLUE)
+    c.drawString(1.6*inch, 0.45*inch, "Endress+Hauser")
+    
+    c.setFont("Helvetica", 7)
     c.setFillColor(HexColor("#6B7280"))
-    c.drawString(0.5*inch, 0.4*inch, "Digitalization Partner: Endress+Hauser")
-    c.setFont("Helvetica", 6)
     c.drawString(0.5*inch, 0.25*inch, "Flow Measurement Technology • Process Automation • Regulatory Compliance Excellence")
 
     c.save()
