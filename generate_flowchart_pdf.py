@@ -37,30 +37,18 @@ def generate_flowchart_pdf():
     c.setFillColor(DARK_TEXT)
     c.drawCentredString(width/2, height - 0.85*inch, "Automated Data Flow Architecture")
     
+    # Customer name in top right
+    c.setFont("Helvetica-Bold", 10)
+    c.setFillColor(NAVY)
+    c.drawRightString(width - 0.5*inch, height - 0.6*inch, "SIP 2 LIFE Distilleries Pvt. Ltd.")
+    c.setFont("Helvetica", 8)
+    c.setFillColor(DARK_TEXT)
+    c.drawRightString(width - 0.5*inch, height - 0.8*inch, "Regulatory Compliance System")
+    
     # Header separator line
     c.setStrokeColor(GOLD)
     c.setLineWidth(2)
     c.line(1.5*inch, height - 1*inch, width - 1.5*inch, height - 1*inch)
-    
-    # --- Single E+H Logo Placement (Top Right) ---
-    logo_path = "EndressHauser_logo-removebg-preview.png"
-    if os.path.exists(logo_path):
-        # Sky blue background box for logo
-        logo_box_x = width - 2.8*inch
-        logo_box_y = height - 0.95*inch
-        logo_box_w = 2.3*inch
-        logo_box_h = 0.7*inch
-        
-        c.setFillColor(HexColor("#E0F2FE"))  # Light sky blue
-        c.setStrokeColor(SKY_BLUE)
-        c.setLineWidth(1.5)
-        c.roundRect(logo_box_x, logo_box_y, logo_box_w, logo_box_h, 6, fill=1, stroke=1)
-        
-        # Logo centered in box
-        logo_w, logo_h = 180, 45
-        logo_x = logo_box_x + (logo_box_w - logo_w) / 2
-        logo_y = logo_box_y + (logo_box_h - logo_h) / 2
-        c.drawImage(logo_path, logo_x, logo_y, width=logo_w, height=logo_h, mask='auto')
 
     # --- Enhanced Node Drawing Function ---
     def draw_node(x, y, text, color, w=200, h=75, title="", icon=""):
@@ -188,53 +176,58 @@ def generate_flowchart_pdf():
     c.setDash([])
 
     # --- Information Boxes ---
-    # Partnership Info
-    info_x = 1*inch
-    info_y = height - 3.5*inch
+    # Legend
+    legend_x = 1*inch
+    legend_y = height - 3.8*inch
     c.setFillColor(LIGHT_GRAY)
     c.setStrokeColor(BORDER_GRAY)
     c.setLineWidth(1)
-    c.roundRect(info_x, info_y, 2*inch, 1.2*inch, 8, fill=1, stroke=1)
+    c.roundRect(legend_x, legend_y, 2*inch, 1.2*inch, 8, fill=1, stroke=1)
     
     c.setFont("Helvetica-Bold", 9)
     c.setFillColor(NAVY)
-    c.drawString(info_x + 0.15*inch, info_y + 1*inch, "PARTNERSHIP")
+    c.drawString(legend_x + 0.15*inch, legend_y + 1*inch, "LEGEND")
     
     c.setFont("Helvetica", 7)
     c.setFillColor(DARK_TEXT)
-    c.drawString(info_x + 0.15*inch, info_y + 0.8*inch, "Digitalization:")
-    c.setFont("Helvetica-Bold", 7)
-    c.drawString(info_x + 0.15*inch, info_y + 0.65*inch, "Endress+Hauser")
-    
-    c.setFont("Helvetica", 7)
-    c.drawString(info_x + 0.15*inch, info_y + 0.45*inch, "Business Partner:")
-    c.setFont("Helvetica-Bold", 7)
-    c.drawString(info_x + 0.15*inch, info_y + 0.3*inch, "SIP 2 LIFE")
-    c.drawString(info_x + 0.15*inch, info_y + 0.15*inch, "Distilleries Pvt. Ltd.")
-    
-    # Legend
-    legend_x = 1*inch
-    legend_y = height - 5.2*inch
-    c.setFillColor(LIGHT_GRAY)
-    c.setStrokeColor(BORDER_GRAY)
-    c.roundRect(legend_x, legend_y, 2*inch, 1*inch, 8, fill=1, stroke=1)
-    
-    c.setFont("Helvetica-Bold", 9)
-    c.setFillColor(NAVY)
-    c.drawString(legend_x + 0.15*inch, legend_y + 0.8*inch, "LEGEND")
-    
-    c.setFont("Helvetica", 7)
-    c.setFillColor(DARK_TEXT)
-    c.drawString(legend_x + 0.15*inch, legend_y + 0.6*inch, "→ Real-time data flow")
-    c.drawString(legend_x + 0.15*inch, legend_y + 0.45*inch, "⟿ Compilation")
-    c.drawString(legend_x + 0.15*inch, legend_y + 0.3*inch, "🎨 Color-coded registers")
-    c.drawString(legend_x + 0.15*inch, legend_y + 0.15*inch, "📊 Automated sync")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.8*inch, "→ Real-time data flow")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.65*inch, "⟿ Compilation")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.5*inch, "🎨 Color-coded registers")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.35*inch, "📊 Automated sync")
+    c.drawString(legend_x + 0.15*inch, legend_y + 0.2*inch, "🔄 Ripple-effect automation")
 
-    # --- Footer ---
+    # --- Footer with E+H Advertisement ---
+    # Footer separator line
+    c.setStrokeColor(BORDER_GRAY)
+    c.setLineWidth(0.5)
+    c.line(0.5*inch, 0.7*inch, width - 0.5*inch, 0.7*inch)
+    
+    # E+H Logo (small, bottom right)
+    logo_path = "EndressHauser_logo-removebg-preview.png"
+    if os.path.exists(logo_path):
+        # Small sky blue background box
+        logo_box_x = width - 2.3*inch
+        logo_box_y = 0.15*inch
+        logo_box_w = 1.8*inch
+        logo_box_h = 0.5*inch
+        
+        c.setFillColor(HexColor("#E0F2FE"))  # Light sky blue
+        c.setStrokeColor(SKY_BLUE)
+        c.setLineWidth(1)
+        c.roundRect(logo_box_x, logo_box_y, logo_box_w, logo_box_h, 5, fill=1, stroke=1)
+        
+        # Small logo
+        logo_w, logo_h = 140, 35
+        logo_x = logo_box_x + (logo_box_w - logo_w) / 2
+        logo_y = logo_box_y + (logo_box_h - logo_h) / 2
+        c.drawImage(logo_path, logo_x, logo_y, width=logo_w, height=logo_h, mask='auto')
+    
+    # Footer text (left side)
     c.setFont("Helvetica-Oblique", 7)
     c.setFillColor(HexColor("#6B7280"))
-    c.drawCentredString(width/2, 0.3*inch, 
-                       "Powered by Endress+Hauser Flow Measurement Technology • Regulatory Compliance Excellence")
+    c.drawString(0.5*inch, 0.4*inch, "Digitalization Partner: Endress+Hauser")
+    c.setFont("Helvetica", 6)
+    c.drawString(0.5*inch, 0.25*inch, "Flow Measurement Technology • Process Automation • Regulatory Compliance Excellence")
 
     c.save()
     print(f"Successfully generated {filename}")
