@@ -1,9 +1,9 @@
-"""
-Excise Duty Register - Register of Personal Ledger Account of Excise Duty for IML
-Streamlit application for tracking excise duty on issued bottles
-"""
-
 import streamlit as st
+from auth import login_required
+
+# Apply Authentication
+login_required()
+
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 import pandas as pd

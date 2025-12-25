@@ -1,243 +1,200 @@
-"""
-Excise Parallel Register System - Main Application
-Landing page with navigation to all registers
-"""
-
 import streamlit as st
+from auth import login_required
 
 # Page configuration
 st.set_page_config(
-    page_title="Excise Parallel Register System",
-    page_icon="📊",
+    page_title="SIP 2 LIFE | Excise System",
+    page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Apply Password Protection
+login_required()
+
+# Custom CSS for Premium Landing Page
 st.markdown("""
 <style>
-    /* Main header */
-    .main-header {
-        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-        padding: 2rem;
-        border-radius: 10px;
-        color: white;
+    /* Global Styles */
+    .main {
+        background-color: #0f172a;
+    }
+    
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        padding: 4rem 2rem;
+        border-radius: 20px;
+        border-bottom: 5px solid #f4b942;
         text-align: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4);
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
     
-    .main-header h1 {
-        margin: 0;
-        font-size: 2.5rem;
-        font-weight: 700;
+    .hero-title {
+        color: #f4b942;
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 0.5rem;
     }
     
-    .main-header p {
-        margin: 0.5rem 0 0 0;
-        font-size: 1.1rem;
-        opacity: 0.95;
-    }
-    
-    /* Section headers */
-    .section-header {
-        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        color: white;
-        margin: 1.5rem 0 1rem 0;
-        font-size: 1.3rem;
-        font-weight: 600;
-        box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
-    }
-    
-    /* Info boxes */
-    .info-box {
-        background: rgba(59, 130, 246, 0.1);
-        border-left: 4px solid #3b82f6;
-        padding: 1rem;
-        border-radius: 4px;
-        margin: 1rem 0;
-        color: #e0e7ff;
-    }
-    
-    .success-box {
-        background: rgba(34, 197, 94, 0.1);
-        border-left: 4px solid #22c55e;
-        padding: 1rem;
-        border-radius: 4px;
-        margin: 1rem 0;
-        color: #d1fae5;
-    }
-    
-    .warning-box {
-        background: rgba(251, 146, 60, 0.1);
-        border-left: 4px solid #fb923c;
-        padding: 1rem;
-        border-radius: 4px;
-        margin: 1rem 0;
-        color: #fed7aa;
-    }
-    
-    .feature-box {
-        background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-        padding: 1.5rem;
-        border-radius: 10px;
-        color: white;
-        margin: 1rem 0;
-        text-align: center;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
-    }
-    
-    .feature-box h4 {
-        margin: 0 0 0.5rem 0;
+    .hero-subtitle {
+        color: #94a3b8;
         font-size: 1.2rem;
+        font-weight: 400;
     }
     
-    .feature-box p {
-        margin: 0;
-        opacity: 0.9;
-    }
-    
-    /* Register cards (if needed for navigation) */
-    .register-card {
-        background: #2d3748; /* Darker background for cards */
+    /* Portal Cards */
+    .portal-card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(10px);
         padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        margin: 1rem 0;
-        border-left: 5px solid #7c3aed; /* Accent color */
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        color: #e2e8f0; /* Light text for dark background */
+        border-radius: 15px;
+        border: 1px solid rgba(244, 185, 66, 0.2);
+        transition: all 0.3s ease;
+        text-align: center;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
     }
     
-    .register-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    .portal-card:hover {
+        border: 1px solid #f4b942;
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(244, 185, 66, 0.1);
     }
     
-    .register-card h3 {
-        color: #a78bfa; /* Lighter accent for headers */
-        margin-top: 0;
+    .portal-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .portal-name {
+        color: #f4b942;
         font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
     }
     
-    .register-card p {
-        color: #cbd5e0; /* Slightly darker light text */
-        margin: 0.5rem 0;
+    .portal-desc {
+        color: #94a3b8;
+        font-size: 0.9rem;
     }
     
+    /* Stats Bar */
+    .stats-container {
+        display: flex;
+        justify-content: space-around;
+        background: #1e293b;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-top: 3rem;
+    }
     
-    .feature-box p {
-        margin: 0;
-        opacity: 0.9;
+    .stat-item {
+        text-align: center;
+    }
+    
+    .stat-value {
+        color: #f4b942;
+        font-size: 2rem;
+        font-weight: 800;
+    }
+    
+    .stat-label {
+        color: #64748b;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Header
+# Hero Header
 st.markdown("""
-<div class="main-header">
-    <h1>📊 EXCISE PARALLEL REGISTER SYSTEM</h1>
-    <p>SIP 2 LIFE DISTILLERIES</p>
-    <p style="font-size: 1rem; margin-top: 0.5rem;">Comprehensive Digital Register Management</p>
+<div class="hero-section">
+    <div class="hero-title">SIP 2 LIFE DISTILLERIES</div>
+    <div class="hero-subtitle">Premium Parallel Excise Register Management System</div>
 </div>
 """, unsafe_allow_html=True)
 
-# Welcome message
-st.markdown("## 🎯 Welcome to the Excise Register System")
+# Main Navigation Portal
+st.markdown("### 🚪 Strategic Register Access")
+col1, col2, col3 = st.columns(3)
+
+registers = [
+    {"icon": "📋", "name": "Reg-74", "desc": "Spirit Storage & Base Operations", "path": "Reg_74"},
+    {"icon": "🏭", "name": "Reg-A", "desc": "Daily Production & MFM2 Tracking", "path": "Reg_A"},
+    {"icon": "📦", "name": "Reg-B", "desc": "Finished Stock & Production Fees", "path": "Reg_B"},
+    {"icon": "📄", "name": "Reg-76", "desc": "Spirit Receipts & Tanker Logs", "path": "Reg_76"},
+    {"icon": "💰", "name": "Excise Duty", "desc": "Financial Ledger & Duty Debits", "path": "Excise_Duty"},
+    {"icon": "📚", "name": "Handbook", "desc": "Automated Daily Handbook V2", "path": "Daily_Handbook"}
+]
+
+for i in range(0, 3):
+    with [col1, col2, col3][i]:
+        reg = registers[i]
+        st.markdown(f"""
+        <div class="portal-card">
+            <div class="portal-icon">{reg['icon']}</div>
+            <div class="portal-name">{reg['name']}</div>
+            <div class="portal-desc">{reg['desc']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+col4, col5, col6 = st.columns(3)
+for i in range(3, 6):
+    with [col4, col5, col6][i-3]:
+        reg = registers[i]
+        st.markdown(f"""
+        <div class="portal-card">
+            <div class="portal-icon">{reg['icon']}</div>
+            <div class="portal-name">{reg['name']}</div>
+            <div class="portal-desc">{reg['desc']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+# System Summary
 st.markdown("""
-This comprehensive system manages all excise-related registers for distillery operations. 
-Select a register from the sidebar to begin.
-""")
-
-st.markdown("---")
-
-# Key Features
-st.markdown("## ✨ System Features")
-
-col_f1, col_f2, col_f3 = st.columns(3)
-
-with col_f1:
-    st.markdown("""
-    <div class="feature-box">
-        <h4>🔄 Auto-Integration</h4>
-        <p>Seamless data flow between registers</p>
+<div class="stats-container">
+    <div class="stat-item">
+        <div class="stat-value">13</div>
+        <div class="stat-label">Tanks Tracked</div>
     </div>
-    """, unsafe_allow_html=True)
-
-with col_f2:
-    st.markdown("""
-    <div class="feature-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-        <h4>🧮 Auto-Calculations</h4>
-        <p>Automatic BL, AL, fees, and duty calculations</p>
+    <div class="stat-item">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Data Integration</div>
     </div>
-    """, unsafe_allow_html=True)
-
-with col_f3:
-    st.markdown("""
-    <div class="feature-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-        <h4>✅ Validation</h4>
-        <p>Real-time balance and data validation</p>
+    <div class="stat-item">
+        <div class="stat-value">SECURE</div>
+        <div class="stat-label">Access Level</div>
     </div>
-    """, unsafe_allow_html=True)
+    <div class="stat-item">
+        <div class="stat-value">V2.0</div>
+        <div class="stat-label">System Version</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown("---")
-
-# Quick Stats
-st.markdown("## 📊 System Overview")
-
-col_s1, col_s2, col_s3, col_s4 = st.columns(4)
-
-with col_s1:
-    st.metric("Total Registers", "6", help="Number of active registers")
-
-with col_s2:
-    st.metric("Bottle Sizes", "6", help="Supported bottle measurements")
-
-with col_s3:
-    st.metric("Strength Options", "4", help="U.P. degree options")
-
-with col_s4:
-    st.metric("Integration Points", "5", help="Cross-register integrations")
-
-st.markdown("---")
-
-# Instructions
-st.markdown("## 📖 Getting Started")
-
-st.markdown("""
-### 📝 Daily Workflow:
-
-1. **Reg-A (Production)** → Record production and bottling operations
-2. **Reg-78** → Track production fees on bulk litres
-3. **Reg-B** → Record bottle issues and production fees
-4. **Excise Duty Register** → Calculate and track excise duty on issued bottles
-
-### 🎯 Navigation:
-
-Use the **sidebar** to navigate between different registers. Each register has:
-- **Data Entry View** - For daily entries
-- **Summary View** - For consolidated reports
-- **Auto-fill Options** - For streamlined data entry
-
-### 💡 Tips:
-
-- ✅ Enable auto-fill options for faster entry
-- ✅ Verify auto-filled data before saving
-- ✅ Generate summaries after completing entries
-- ✅ Use validation warnings to ensure data accuracy
-""")
-
-st.markdown("---")
+# Sidebar Info
+with st.sidebar:
+    st.markdown("### 🛡️ Administration")
+    st.success("✅ Logged in as Administrator")
+    st.divider()
+    st.info("Select a register from the left menu to start operations.")
+    if st.button("🚪 Logout"):
+        st.session_state.clear()
+        st.rerun()
 
 # Footer
 st.markdown("""
-<div style="text-align: center; color: #666; padding: 2rem;">
-    <p><strong>Excise Parallel Register System</strong></p>
-    <p>SIP 2 LIFE DISTILLERIES | Digital Register Management</p>
-    <p style="font-size: 0.9rem; margin-top: 1rem;">
-        Built with Streamlit | Version 1.0
-    </p>
+<div style="text-align: center; color: #475569; padding: 4rem 0 2rem 0;">
+    <p style="margin:0;"><strong>SIP 2 LIFE DISTILLERIES PVT. LTD.</strong></p>
+    <p style="margin:0; font-size: 0.8rem;">Regulatory Compliance & Parallel Accounting Module</p>
 </div>
 """, unsafe_allow_html=True)

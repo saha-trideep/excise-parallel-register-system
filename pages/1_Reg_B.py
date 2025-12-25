@@ -1,9 +1,9 @@
-"""
-Reg-B - Issue of Country Liquor in Bottles
-Streamlit application for finished goods inventory and production fees tracking
-"""
-
 import streamlit as st
+from auth import login_required
+
+# Apply Authentication
+login_required()
+
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 import pandas as pd

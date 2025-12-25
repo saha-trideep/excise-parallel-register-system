@@ -1,9 +1,9 @@
-"""
-Daily Handbook Generator - Streamlit Interface
-Professional PDF handbook generation for SIP2LIFE DISTILLERIES
-"""
-
 import streamlit as st
+from auth import login_required
+
+# Apply Authentication
+login_required()
+
 from datetime import date, datetime, timedelta
 import os
 import sys

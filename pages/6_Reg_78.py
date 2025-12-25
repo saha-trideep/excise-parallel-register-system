@@ -1,4 +1,9 @@
 import streamlit as st
+from auth import login_required
+
+# Apply Authentication
+login_required()
+
 import pandas as pd
 from datetime import datetime, timedelta
 import time

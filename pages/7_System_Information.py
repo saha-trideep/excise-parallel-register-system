@@ -1,4 +1,9 @@
 import streamlit as st
+from auth import login_required
+
+# Apply Authentication
+login_required()
+
 import os
 import base64
 
@@ -48,61 +53,31 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-col1, col2 = st.columns(2)
+# System Flowchart Card
+st.markdown('<div class="documentation-card">', unsafe_allow_html=True)
+st.markdown('<div class="doc-title">🗺️ System Automation Flowchart</div>', unsafe_allow_html=True)
+st.markdown("""
+<p class="doc-description">
+    Visualize the <b>"Ripple Effect"</b> automation. See how data moves from 
+    Reg-74 (Base Source) through Production, Inventory, and finally to the 
+    Excise Duty financials.
+</p>
+""", unsafe_allow_html=True)
 
-# 1. System Flowchart Card
-with col1:
-    st.markdown('<div class="documentation-card">', unsafe_allow_html=True)
-    st.markdown('<div class="doc-title">🗺️ System Automation Flowchart</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <p class="doc-description">
-        Visualize the <b>"Ripple Effect"</b> automation. See how data moves from 
-        Reg-74 (Base Source) through Production, Inventory, and finally to the 
-        Excise Duty financials.
-    </p>
-    """, unsafe_allow_html=True)
-    
-    file_path = "System_Flowchart.pdf"
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            pdf_bytes = f.read()
-        st.download_button(
-            label="📥 Download System Flowchart PDF",
-            data=pdf_bytes,
-            file_name="System_Flowchart_Automation.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
-    else:
-        st.error("⚠️ System Flowchart PDF not found. Please generate it first.")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# 2. Database Schema Card
-with col2:
-    st.markdown('<div class="documentation-card">', unsafe_allow_html=True)
-    st.markdown('<div class="doc-title">🗄️ Database & Schema Structure</div>', unsafe_allow_html=True)
-    st.markdown("""
-    <p class="doc-description">
-        Detailed map of the <b>Hybrid Storage Architecture</b>. Understand the 
-        relationships between CSV trackers (Reg-74, Reg-A) and SQLite ledgers 
-        (Reg-B, Excise Duty).
-    </p>
-    """, unsafe_allow_html=True)
-    
-    file_path = "Database_Schema_Structure.pdf"
-    if os.path.exists(file_path):
-        with open(file_path, "rb") as f:
-            pdf_bytes = f.read()
-        st.download_button(
-            label="📥 Download Database Schema PDF",
-            data=pdf_bytes,
-            file_name="Database_Schema_Technical.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
-    else:
-        st.error("⚠️ Database Schema PDF not found. Please generate it first.")
-    st.markdown('</div>', unsafe_allow_html=True)
+file_path = "System_Flowchart.pdf"
+if os.path.exists(file_path):
+    with open(file_path, "rb") as f:
+        pdf_bytes = f.read()
+    st.download_button(
+        label="📥 Download System Flowchart PDF",
+        data=pdf_bytes,
+        file_name="System_Flowchart_Automation.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
+else:
+    st.error("⚠️ System Flowchart PDF not found. Please generate it first.")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Full System Overview Text
 st.markdown("---")
