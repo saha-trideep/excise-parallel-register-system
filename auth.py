@@ -47,12 +47,6 @@ def check_password():
         st.markdown('<div class="login-container">', unsafe_allow_html=True)
         st.markdown('<div class="login-title">🔐 Secure Access</div>', unsafe_allow_html=True)
         
-        # E+H Logo on login
-        import os
-        logo_path = "EndressHauser_logo-removebg-preview.png"
-        if os.path.exists(logo_path):
-            st.image(logo_path, width=150)
-            
         st.text_input(
             "Enter Password to Access Registers", 
             type="password", 
@@ -62,11 +56,6 @@ def check_password():
         if "password_correct" in st.session_state and not st.session_state["password_correct"]:
             st.error("😕 Password incorrect. Please try again.")
         st.info("System protected by Admin Security.")
-        st.markdown("""
-            <div style='text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 10px;'>
-                Digitalization Partner: <b>Endress+Hauser</b>
-            </div>
-        """, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
         return False
     elif not st.session_state["password_correct"]:
