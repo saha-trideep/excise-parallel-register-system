@@ -11,7 +11,7 @@ import sys
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from handbook_generator import HandbookGenerator
+from handbook_generator import EnhancedHandbookGenerator
 
 # Page configuration
 st.set_page_config(
@@ -214,7 +214,7 @@ with col2:
         with st.spinner("📄 Generating professional handbook..."):
             try:
                 # Generate handbook
-                generator = HandbookGenerator(handbook_date)
+                generator = EnhancedHandbookGenerator(handbook_date)
                 output_file = generator.generate_handbook()
                 
                 # Success message
