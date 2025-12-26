@@ -426,10 +426,6 @@ with tab_entry:
 with tab_admin:
     st.subheader("Reg-76 Administrative Control")
     
-    # DEBUG MESSAGE - REMOVE AFTER TESTING
-    st.success("🔧 **DEBUG MODE**: Delete functionality code is loaded! If you see this, the file has been updated.")
-    st.info(f"📅 **Last code update**: December 26, 2025, 15:00 IST")
-    
     # Filter Controls
     with st.expander("🔍 Search & Filter", expanded=True):
         f1, f2, f3 = st.columns(3)
