@@ -38,8 +38,16 @@ def get_data_local():
     """Load local CSV fallback"""
     if os.path.exists(CSV_PATH):
         try:
-            return pd.read_csv(CSV_PATH)
-        except Exception:
+            df = pd.read_csv(CSV_PATH)
+            # Remove empty rows (rows where all values are NaN or empty)
+            df = df.dropna(how='all')
+            # Remove rows where reg76_id is empty/NaN
+            if 'reg76_id' in df.columns:
+                df = df[df['reg76_id'].notna()]
+                df = df[df['reg76_id'].astype(str).str.strip() != '']
+            return df
+        except Exception as e:
+            st.error(f"Error reading CSV: {e}")
             return pd.DataFrame(columns=COLUMNS)
     return pd.DataFrame(columns=COLUMNS)
 
@@ -76,6 +84,56 @@ def save_record(data_dict):
             
     return data_dict["reg76_id"]
 
+def delete_record(reg76_id):
+    """Delete a record from both local CSV and Google Sheets"""
+    try:
+        # 1. Delete from local CSV
+        df_local = get_data_local()
+        
+        if df_local.empty:
+            return False, "No records found in local storage"
+        
+        # Check if record exists
+        if reg76_id not in df_local['reg76_id'].values:
+            return False, f"Record {reg76_id} not found"
+        
+        # Remove the record
+        df_local = df_local[df_local['reg76_id'] != reg76_id]
+        
+        # Save back to CSV
+        df_local.to_csv(CSV_PATH, index=False)
+        
+        # 2. Sync to Google Sheets
+        sync_success = sync_to_gsheet(df_local)
+        
+        if sync_success:
+            return True, "✅ Record deleted from both local storage and Google Sheets"
+        else:
+            return True, "⚠️ Record deleted locally, but Google Sheets sync failed"
+            
+    except Exception as e:
+        return False, f"Error deleting record: {str(e)}"
+
+def clear_all_data():
+    """Clear all data from both CSV and Google Sheets - USE WITH CAUTION"""
+    try:
+        # Create empty dataframe with columns
+        empty_df = pd.DataFrame(columns=COLUMNS)
+        
+        # Save empty CSV
+        empty_df.to_csv(CSV_PATH, index=False)
+        
+        # Sync to Google Sheets
+        sync_success = sync_to_gsheet(empty_df)
+        
+        if sync_success:
+            return True, "✅ All data cleared from both local storage and Google Sheets"
+        else:
+            return True, "⚠️ Local data cleared, but Google Sheets sync failed"
+            
+    except Exception as e:
+        return False, f"Error clearing data: {str(e)}"
+
 def sync_to_gsheet(df):
     """Sync a dataframe to the Google Sheet using direct gspread"""
     client = get_google_client()
@@ -93,6 +151,9 @@ def sync_to_gsheet(df):
             
             # Convert to list format
             cleaned_data = [df_str.columns.values.tolist()] + df_str.values.tolist()
+            
+            # Clear the sheet first
+            worksheet.clear()
             
             # Update sheet
             worksheet.update('A1', cleaned_data, value_input_option='USER_ENTERED')
