@@ -426,6 +426,10 @@ with tab_entry:
 with tab_admin:
     st.subheader("Reg-76 Administrative Control")
     
+    # DEBUG MESSAGE - REMOVE AFTER TESTING
+    st.success("🔧 **DEBUG MODE**: Delete functionality code is loaded! If you see this, the file has been updated.")
+    st.info(f"📅 **Last code update**: December 26, 2025, 15:00 IST")
+    
     # Filter Controls
     with st.expander("🔍 Search & Filter", expanded=True):
         f1, f2, f3 = st.columns(3)
@@ -454,9 +458,11 @@ with tab_admin:
         📊 **Data Storage**: {len(records)} records stored locally in `reg76_data.csv` 
         and synced to Google Sheets. Local file serves as backup and ensures zero data loss.
         """)
-        
-        # DELETE RECORD SECTION
-        st.divider()
+    
+    # DELETE RECORD SECTION - NOW ALWAYS VISIBLE FOR TESTING
+    st.divider()
+    
+    if not records.empty:
         with st.expander("🗑️ Delete Records", expanded=False):
             st.warning("⚠️ **WARNING**: Deleting records will remove them from both local CSV and Google Sheets!")
             
@@ -526,8 +532,14 @@ with tab_admin:
                         st.rerun()
                     else:
                         st.error(message)
-        
-        st.divider()
+    else:
+        st.warning("⚠️ No records available. Add a record first to see delete options.")
+        st.info("💡 **Tip**: Go to the 'SECURE DATA ENTRY' tab to add a test record, or run `python add_test_record_reg76.py`")
+    
+    st.divider()
+    
+    # Export and Sync buttons - always visible
+    if not records.empty:
         col_btn1, col_btn2, col_sync = st.columns([1, 1, 1])
         with col_btn1:
             csv = records.to_csv(index=False).encode('utf-8')
@@ -575,3 +587,4 @@ with tab_admin:
                             st.rerun()
                         else:
                             st.error("GSheet sync failed. Check if you have shared the sheet with the service account email.")
+
