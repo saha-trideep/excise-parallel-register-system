@@ -455,6 +455,78 @@ with tab_admin:
         and synced to Google Sheets. Local file serves as backup and ensures zero data loss.
         """)
         
+        # DELETE RECORD SECTION
+        st.divider()
+        with st.expander("🗑️ Delete Records", expanded=False):
+            st.warning("⚠️ **WARNING**: Deleting records will remove them from both local CSV and Google Sheets!")
+            
+            delete_col1, delete_col2 = st.columns([2, 1])
+            with delete_col1:
+                record_to_delete = st.selectbox(
+                    "Select Record to Delete",
+                    options=[""] + records['reg76_id'].tolist(),
+                    help="Choose a record ID to delete"
+                )
+            with delete_col2:
+                st.write("")  # Spacer
+                st.write("")  # Spacer
+                if st.button("🗑️ Delete Selected", type="secondary", disabled=(record_to_delete == "")):
+                    if record_to_delete:
+                        # Confirmation dialog
+                        if 'confirm_delete' not in st.session_state:
+                            st.session_state.confirm_delete = False
+                        
+                        if not st.session_state.confirm_delete:
+                            st.session_state.confirm_delete = True
+                            st.warning(f"⚠️ Are you sure you want to delete **{record_to_delete}**?")
+                            st.rerun()
+                        else:
+                            success, message = reg76_backend.delete_record(record_to_delete)
+                            if success:
+                                st.success(message)
+                                st.session_state.confirm_delete = False
+                                time.sleep(1)
+                                st.rerun()
+                            else:
+                                st.error(message)
+                                st.session_state.confirm_delete = False
+            
+            # Show confirmation button if needed
+            if 'confirm_delete' in st.session_state and st.session_state.confirm_delete:
+                conf_col1, conf_col2 = st.columns(2)
+                with conf_col1:
+                    if st.button("✅ YES, DELETE IT", type="primary"):
+                        success, message = reg76_backend.delete_record(record_to_delete)
+                        if success:
+                            st.success(message)
+                            st.session_state.confirm_delete = False
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error(message)
+                            st.session_state.confirm_delete = False
+                with conf_col2:
+                    if st.button("❌ CANCEL"):
+                        st.session_state.confirm_delete = False
+                        st.rerun()
+        
+        # DANGEROUS: Clear All Data
+        with st.expander("⚠️ DANGER ZONE: Clear All Data", expanded=False):
+            st.error("🚨 **EXTREME CAUTION**: This will DELETE ALL records from both CSV and Google Sheets!")
+            st.write("This action cannot be undone. Please type **DELETE ALL** to confirm:")
+            
+            clear_confirm = st.text_input("Type DELETE ALL to confirm", key="clear_confirm")
+            
+            if st.button("🗑️ CLEAR ALL DATA", type="secondary", disabled=(clear_confirm != "DELETE ALL")):
+                if clear_confirm == "DELETE ALL":
+                    success, message = reg76_backend.clear_all_data()
+                    if success:
+                        st.success(message)
+                        time.sleep(2)
+                        st.rerun()
+                    else:
+                        st.error(message)
+        
         st.divider()
         col_btn1, col_btn2, col_sync = st.columns([1, 1, 1])
         with col_btn1:
