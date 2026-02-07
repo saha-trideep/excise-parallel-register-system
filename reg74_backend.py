@@ -16,6 +16,8 @@ try:
 except ImportError:
     GSPREAD_AVAILABLE = False
 
+import desktop_storage  # New desktop storage module
+
 CSV_PATH = "reg74_data.csv"
 JSON_KEY = "the-program-482110-e4-7ef9d425d794.json"
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Ecmrq9JUhCerhq4mebO1Jtpw8sD_tTo-79_x3Jabr68"
@@ -60,36 +62,47 @@ def get_data_local():
     return pd.DataFrame(columns=REG74_COLUMNS)
 
 def get_data():
-    """Load data - prioritized from Local CSV for speed"""
-    return get_data_local()
+    """Load data - prioritized from Desktop Excel"""
+    # Desktop Excel is now the primary source of truth
+    return desktop_storage.get_reg74_data_from_excel()
 
 def save_record(data_dict):
-    """Save record to local CSV first, then attempt push using gspread"""
-    df_local = get_data_local()
+    """Save record to Desktop Excel (primary), CSV (backup), and Google Sheets (sync)"""
     
-    # ID Generation
-    if "reg74_id" not in data_dict or not data_dict["reg74_id"]:
-        prefix = "R74-"
-        count = len(df_local) + 1
-        data_dict["reg74_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:04d}"
+    # 1. Save to Desktop Excel (PRIMARY)
+    success_excel, message_excel, record_id = desktop_storage.add_reg74_record_to_excel(data_dict)
     
+    if not success_excel:
+        st.error(message_excel)
+        return None
+        
+    # Update data_dict with generated ID
+    data_dict["reg74_id"] = record_id
     data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data_dict["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # 1. Update Local CSV (Always)
-    new_row = pd.DataFrame([data_dict])
-    df_local = pd.concat([df_local, new_row], ignore_index=True)
-    df_local.to_csv(CSV_PATH, index=False)
+    # 2. Save to Local CSV (BACKUP)
+    try:
+        df_local = get_data_local()
+        new_row = pd.DataFrame([data_dict])
+        df_local = pd.concat([df_local, new_row], ignore_index=True)
+        df_local.to_csv(CSV_PATH, index=False)
+    except Exception as e:
+        st.warning(f"⚠️ CSV backup failed: {e}")
     
-    # 2. Attempt Sync
-    sync_success = sync_to_gsheet(df_local)
+    # 3. Attempt Sync
+    # For sync, we should ideally sync the Excel data, but for now syncing local might be safer/faster 
+    # if we assume sequential writes. However, to match Reg76 pattern:
+    df_excel = desktop_storage.get_reg74_data_from_excel()
+    sync_success = sync_to_gsheet(df_excel)
     
     if sync_success:
-        st.success("✅ Record saved locally AND synced to Google Sheets!")
+        st.success(f"✅ Record saved to Desktop Excel AND synced to Google Sheets!\n📁 Location: {desktop_storage.REG74_EXCEL_FILE}")
     else:
-        st.warning("⚠️ Record saved locally. Google Sheets sync failed - use manual sync button.")
+        st.success(f"✅ Record saved to Desktop Excel!\n📁 Location: {desktop_storage.REG74_EXCEL_FILE}")
+        st.info("ℹ️ Google Sheets sync failed - use manual sync button if needed.")
             
-    return data_dict["reg74_id"]
+    return record_id
 
 def sync_to_gsheet(df):
     """Sync a dataframe to the Google Sheet using direct gspread"""

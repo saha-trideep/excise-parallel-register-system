@@ -211,20 +211,26 @@ def display_calc_result(label, value, unit=""):
         </div>
     """, unsafe_allow_html=True)
 
-def calculate_bottles_bl(bottles_180, bottles_375, bottles_750, bottles_1000):
+def calculate_bottles_bl(bottles_180, bottles_300, bottles_375, bottles_500, bottles_600, bottles_750, bottles_1000):
     """Calculate total BL from bottle counts"""
     bl_180 = bottles_180 * BOTTLE_SIZES["180ml"]
+    bl_300 = bottles_300 * BOTTLE_SIZES["300ml"]
     bl_375 = bottles_375 * BOTTLE_SIZES["375ml"]
+    bl_500 = bottles_500 * BOTTLE_SIZES["500ml"]
+    bl_600 = bottles_600 * BOTTLE_SIZES["600ml"]
     bl_750 = bottles_750 * BOTTLE_SIZES["750ml"]
     bl_1000 = bottles_1000 * BOTTLE_SIZES["1000ml"]
     
     return {
         "bl_180": bl_180,
+        "bl_300": bl_300,
         "bl_375": bl_375,
+        "bl_500": bl_500,
+        "bl_600": bl_600,
         "bl_750": bl_750,
         "bl_1000": bl_1000,
-        "total_bl": bl_180 + bl_375 + bl_750 + bl_1000,
-        "total_bottles": bottles_180 + bottles_375 + bottles_750 + bottles_1000
+        "total_bl": bl_180 + bl_300 + bl_375 + bl_500 + bl_600 + bl_750 + bl_1000,
+        "total_bottles": bottles_180 + bottles_300 + bottles_375 + bottles_500 + bottles_600 + bottles_750 + bottles_1000
     }
 
 def display_wastage_analysis(mfm2_bl, mfm2_al, bottles_bl, bottles_al, strength):
@@ -396,18 +402,34 @@ with tab_entry:
             st.markdown('<div class="section-header">SECTION 4 – BOTTLE PRODUCTION</div>', unsafe_allow_html=True)
             
             st.markdown("**Bottle Counts (Enter number of bottles produced)**")
+            
+            # Row 1: Smaller Sizes
             b1, b2, b3, b4 = st.columns(4)
             with b1:
                 bottles_180ml = st.number_input("180 ML Bottles", min_value=0, step=1, value=0)
             with b2:
-                bottles_375ml = st.number_input("375 ML Bottles", min_value=0, step=1, value=0)
+                bottles_300ml = st.number_input("300 ML Bottles", min_value=0, step=1, value=0)
             with b3:
-                bottles_750ml = st.number_input("750 ML Bottles", min_value=0, step=1, value=0)
+                bottles_375ml = st.number_input("375 ML Bottles", min_value=0, step=1, value=0)
             with b4:
+                bottles_500ml = st.number_input("500 ML Bottles", min_value=0, step=1, value=0)
+                
+            # Row 2: Larger Sizes
+            b5, b6, b7, b8 = st.columns(4)
+            with b5:
+                bottles_600ml = st.number_input("600 ML Bottles", min_value=0, step=1, value=0)
+            with b6:
+                bottles_750ml = st.number_input("750 ML Bottles", min_value=0, step=1, value=0)
+            with b7:
                 bottles_1000ml = st.number_input("1000 ML Bottles", min_value=0, step=1, value=0)
+            with b8:
+                st.write("") # Spacer
             
             # Calculate bottle volumes
-            bottle_calc = calculate_bottles_bl(bottles_180ml, bottles_375ml, bottles_750ml, bottles_1000ml)
+            bottle_calc = calculate_bottles_bl(
+                bottles_180ml, bottles_300ml, bottles_375ml, 
+                bottles_500ml, bottles_600ml, bottles_750ml, bottles_1000ml
+            )
             bottles_total_bl = bottle_calc['total_bl']
             bottles_total_al = bottles_total_bl * (brt_opening_strength / 100)
             
@@ -521,6 +543,23 @@ with tab_entry:
                         # Check if batch is complete
                         is_batch_complete = brt_closing_bl < 0.1
                         
+                        # Wastage Calculations
+                        wastage_bl = wastage_result['wastage_bl'] if wastage_result else 0.0
+                        wastage_al_val = wastage_result['wastage_al'] if wastage_result else 0.0
+                        wastage_pct = wastage_result['wastage_percentage'] if wastage_result else 0.0
+                        
+                        production_increase_al = 0.0
+                        chargeable_wastage_al = 0.0
+                        allowable_wastage = mfm2_al * (PRODUCTION_WASTAGE_LIMIT / 100)
+                        
+                        if wastage_al_val < 0:
+                            production_increase_al = abs(wastage_al_val)
+                            # Keep wastage displayed as negative or set to 0? Schema expects simple storage.
+                            # We'll store exact values.
+                        else:
+                            if wastage_al_val > allowable_wastage:
+                                chargeable_wastage_al = wastage_al_val - allowable_wastage
+                        
                         payload = {
                             "production_date": str(production_date),
                             "production_shift": production_shift,
@@ -542,22 +581,30 @@ with tab_entry:
                             "mfm2_end_reading": mfm2_end,
                             "mfm2_total_passed": mfm2_bl,
                             "bottles_180ml": bottles_180ml,
+                            "bottles_300ml": bottles_300ml,
                             "bottles_375ml": bottles_375ml,
+                            "bottles_500ml": bottles_500ml,
+                            "bottles_600ml": bottles_600ml,
                             "bottles_750ml": bottles_750ml,
                             "bottles_1000ml": bottles_1000ml,
                             "total_bottles": bottle_calc['total_bottles'],
                             "bottles_bl_180ml": bottle_calc['bl_180'],
+                            "bottles_bl_300ml": bottle_calc['bl_300'],
                             "bottles_bl_375ml": bottle_calc['bl_375'],
+                            "bottles_bl_500ml": bottle_calc['bl_500'],
+                            "bottles_bl_600ml": bottle_calc['bl_600'],
                             "bottles_bl_750ml": bottle_calc['bl_750'],
                             "bottles_bl_1000ml": bottle_calc['bl_1000'],
                             "bottles_total_bl": bottles_total_bl,
                             "bottles_total_al": bottles_total_al,
-                            "wastage_bl": wastage_result['wastage_bl'] if wastage_result else 0.0,
-                            "wastage_al": wastage_result['wastage_al'] if wastage_result else 0.0,
-                            "wastage_percentage": wastage_result['wastage_percentage'] if wastage_result else 0.0,
+                            "wastage_bl": wastage_bl,
+                            "wastage_al": wastage_al_val,
+                            "wastage_percentage": wastage_pct,
                             "allowable_limit": PRODUCTION_WASTAGE_LIMIT,
                             "wastage_status": "Within Limit" if wastage_result and wastage_result['within_limit'] else "Exceeds Limit",
                             "wastage_note": wastage_note,
+                            "production_increase_al": production_increase_al,
+                            "chargeable_wastage_al": chargeable_wastage_al,
                             "brt_issue_bl": mfm2_bl,
                             "brt_issue_al": mfm2_al,
                             "brt_closing_bl": brt_closing_bl,

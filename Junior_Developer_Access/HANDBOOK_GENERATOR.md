@@ -28,11 +28,11 @@ The handbook pulls data from all registers:
 ### 📊 **Handbook Sections**
 
 #### 1. **SST & BRT Detail**
-- Current stock levels for all vats
-- SST vats: SST-5 to SST-10 (6 vats)
-- BRT vats: BRT-11 to BRT-17 (7 vats)
-- Displays: BL, AL, Strength (%v/v)
+- All 6 SST vats (SST-5 to SST-10)
+- All 7 BRT vats (BRT-11 to BRT-17)
+- Columns: Vats, Dip (cm), B.L., %v/v, A.L., Received (A.L.)
 - Auto-calculated totals and grand totals
+- **New**: Auto-fills "Received (A.L.)" from Reg-76 spirit receipts
 
 #### 2. **Production Detail**
 - Opening balance from Reg-78
@@ -50,11 +50,8 @@ The handbook pulls data from all registers:
 - Production wastage in AL
 
 #### 4. **Issued Bottle Details**
-- Opening balance in hand
-- Quantity received to be accounted
-- Total bottles to be wastage/breakage
-- Issue on payment of party
-- Closing in hand of bottle
+- **Manual Entry**: Fields are left blank for manual recording
+- Columns: Size, Strength, Opening, Received, Total, Wastage, Issue, Closing
 - Organized by bottle size
 
 #### 5. **Excise Duty Detail**

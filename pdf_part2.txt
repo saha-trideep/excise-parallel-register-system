@@ -1,0 +1,30 @@
+﻿def generate_maintenance_pdf(start_date: date, end_date: date, output_path: str = "maintenance_report.pdf") -> tuple:
+    try:
+        df = get_maintenance_activities(start_date, end_date)
+        if df.empty:
+            return False, f"No data found", None
+        total_activities = len(df)
+        total_hours = df['time_spent_hours'].sum()
+        avg_time = total_hours / total_activities if total_activities > 0 else 0
+        unique_days = df['date'].nunique()
+        doc = SimpleDocTemplate(output_path, pagesize=A4, leftMargin=20*mm, rightMargin=20*mm, topMargin=15*mm, bottomMargin=20*mm)
+        elements = []
+        styles = getSampleStyleSheet()
+        main_title = ParagraphStyle('MainTitle', parent=styles['Title'], fontSize=32, textColor=EH_BLUE, alignment=TA_CENTER, spaceAfter=8, fontName='Helvetica-Bold', leading=38)
+        subtitle = ParagraphStyle('Subtitle', parent=styles['Normal'], fontSize=14, textColor=EH_DARK_BLUE, alignment=TA_CENTER, spaceAfter=20, fontName='Helvetica-Oblique')
+        section_title = ParagraphStyle('SectionTitle', parent=styles['Heading1'], fontSize=18, textColor=colors.white, backColor=EH_BLUE, alignment=TA_LEFT, spaceAfter=12, fontName='Helvetica-Bold', leftIndent=12, borderPadding=(8,8,8,8), leading=24)
+        body_text = ParagraphStyle('BodyText', parent=styles['Normal'], fontSize=10, textColor=colors.HexColor('#333333'), alignment=TA_LEFT, spaceAfter=8, leading=14)
+        elements.append(Spacer(1, 0.3*inch))
+        try:
+            logo = Image("C:\\Users\\Lenovo\\Downloads\\eh_logo.png", width=4*inch, height=1*inch)
+            logo.hAlign = 'CENTER'
+            elements.append(logo)
+            elements.append(Spacer(1, 0.4*inch))
+        except:
+            elements.append(Paragraph("ENDRESS+HAUSER", main_title))
+            elements.append(Spacer(1, 0.2*inch))
+        elements.append(Paragraph("MAINTENANCE ACTIVITY REPORT", main_title))
+        elements.append(Spacer(1, 0.1*inch))
+        subtitle_text = f"Field Service Engineering Report<br/>{start_date.strftime('%B %d, %Y')} - {end_date.strftime('%B %d, %Y')}"
+        elements.append(Paragraph(subtitle_text, subtitle))
+        elements.append(Spacer(1, 0.5*inch))

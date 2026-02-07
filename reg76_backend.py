@@ -6,6 +6,7 @@ import streamlit as st
 from streamlit_gsheets import GSheetsConnection
 import gspread
 from google.oauth2.service_account import Credentials
+import desktop_storage  # New desktop storage module
 
 CSV_PATH = "reg76_data.csv"
 JSON_KEY = "the-program-482110-e4-7ef9d425d794.json"
@@ -52,84 +53,99 @@ def get_data_local():
     return pd.DataFrame(columns=COLUMNS)
 
 def get_data():
-    """Load data - prioritized from Local CSV for speed, sync handled separately"""
-    # For this app, we trust local CSV as the source of truth, 
-    # and use GSheet as a replica/backup.
-    return get_data_local()
+    """Load data - prioritized from Desktop Excel file"""
+    # Desktop Excel is now the primary source of truth
+    return desktop_storage.get_data_from_excel()
 
 def save_record(data_dict):
-    """Save record to local CSV first, then attempt push using gspread"""
-    df_local = get_data_local()
+    """Save record to Desktop Excel (primary), CSV (backup), and Google Sheets (sync)"""
     
-    # ID Generation
-    if "reg76_id" not in data_dict or not data_dict["reg76_id"]:
-        prefix = "R76-"
-        count = len(df_local) + 1
-        data_dict["reg76_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:03d}"
+    # 1. Save to Desktop Excel (PRIMARY)
+    success_excel, message_excel, record_id = desktop_storage.add_record_to_excel(data_dict)
     
+    if not success_excel:
+        st.error(message_excel)
+        return None
+    
+    # Update data_dict with generated ID
+    data_dict["reg76_id"] = record_id
     data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # 1. Update Local CSV (Always)
-    new_row = pd.DataFrame([data_dict])
-    df_local = pd.concat([df_local, new_row], ignore_index=True)
-    df_local.to_csv(CSV_PATH, index=False)
+    # 2. Save to Local CSV (BACKUP)
+    try:
+        df_local = get_data_local()
+        new_row = pd.DataFrame([data_dict])
+        df_local = pd.concat([df_local, new_row], ignore_index=True)
+        df_local.to_csv(CSV_PATH, index=False)
+    except Exception as e:
+        st.warning(f"⚠️ CSV backup failed: {e}")
     
-    # 2. Attempt Sync and show result
-    sync_success = sync_to_gsheet(df_local)
+    # 3. Sync to Google Sheets (OPTIONAL SYNC)
+    df_excel = desktop_storage.get_data_from_excel()
+    sync_success = sync_to_gsheet(df_excel)
     
     if sync_success:
-        st.success("✅ Record saved locally AND synced to Google Sheets!")
+        st.success(f"✅ Record saved to Desktop Excel AND synced to Google Sheets!\n📁 Location: {desktop_storage.REG76_EXCEL_FILE}")
     else:
-        st.warning("⚠️ Record saved locally. Google Sheets sync failed - use manual sync button.")
+        st.success(f"✅ Record saved to Desktop Excel!\n📁 Location: {desktop_storage.REG76_EXCEL_FILE}")
+        st.info("ℹ️ Google Sheets sync failed - use manual sync button if needed.")
             
-    return data_dict["reg76_id"]
+    return record_id
 
 def delete_record(reg76_id):
-    """Delete a record from both local CSV and Google Sheets"""
+    """Delete a record from Desktop Excel, CSV, and Google Sheets"""
     try:
-        # 1. Delete from local CSV
-        df_local = get_data_local()
+        # 1. Delete from Desktop Excel (PRIMARY)
+        success_excel, message_excel = desktop_storage.delete_record_from_excel(reg76_id)
         
-        if df_local.empty:
-            return False, "No records found in local storage"
+        if not success_excel:
+            return False, message_excel
         
-        # Check if record exists
-        if reg76_id not in df_local['reg76_id'].values:
-            return False, f"Record {reg76_id} not found"
+        # 2. Delete from local CSV (BACKUP)
+        try:
+            df_local = get_data_local()
+            if not df_local.empty and reg76_id in df_local['reg76_id'].values:
+                df_local = df_local[df_local['reg76_id'] != reg76_id]
+                df_local.to_csv(CSV_PATH, index=False)
+        except Exception as e:
+            pass  # CSV is backup, don't fail if it errors
         
-        # Remove the record
-        df_local = df_local[df_local['reg76_id'] != reg76_id]
-        
-        # Save back to CSV
-        df_local.to_csv(CSV_PATH, index=False)
-        
-        # 2. Sync to Google Sheets
-        sync_success = sync_to_gsheet(df_local)
+        # 3. Sync to Google Sheets
+        df_excel = desktop_storage.get_data_from_excel()
+        sync_success = sync_to_gsheet(df_excel)
         
         if sync_success:
-            return True, "✅ Record deleted from both local storage and Google Sheets"
+            return True, f"✅ Record deleted from Desktop Excel and synced to Google Sheets"
         else:
-            return True, "⚠️ Record deleted locally, but Google Sheets sync failed"
+            return True, f"⚠️ Record deleted from Desktop Excel, but Google Sheets sync failed"
             
     except Exception as e:
         return False, f"Error deleting record: {str(e)}"
 
 def clear_all_data():
-    """Clear all data from both CSV and Google Sheets - USE WITH CAUTION"""
+    """Clear all data from Desktop Excel, CSV, and Google Sheets - USE WITH CAUTION"""
     try:
-        # Create empty dataframe with columns
+        # 1. Clear Desktop Excel (PRIMARY)
+        success_excel, message_excel = desktop_storage.clear_all_excel_data()
+        
+        if not success_excel:
+            return False, message_excel
+        
+        # 2. Clear CSV (BACKUP)
+        try:
+            empty_df = pd.DataFrame(columns=COLUMNS)
+            empty_df.to_csv(CSV_PATH, index=False)
+        except Exception as e:
+            pass  # CSV is backup
+        
+        # 3. Sync to Google Sheets
         empty_df = pd.DataFrame(columns=COLUMNS)
-        
-        # Save empty CSV
-        empty_df.to_csv(CSV_PATH, index=False)
-        
-        # Sync to Google Sheets
         sync_success = sync_to_gsheet(empty_df)
         
         if sync_success:
-            return True, "✅ All data cleared from both local storage and Google Sheets"
+            return True, "✅ All data cleared from Desktop Excel and Google Sheets"
         else:
-            return True, "⚠️ Local data cleared, but Google Sheets sync failed"
+            return True, "⚠️ Desktop Excel cleared, but Google Sheets sync failed"
             
     except Exception as e:
         return False, f"Error clearing data: {str(e)}"

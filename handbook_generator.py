@@ -101,21 +101,36 @@ class EnhancedHandbookGenerator:
                 print(f"Warning: Could not read {csv_path}: {e}")
         return pd.DataFrame()
     
-    def fetch_regb_bottles(self):
-        """Fetch Reg-B bottle data"""
-        try:
-            conn = self.get_db_connection()
-            query = """
-            SELECT * FROM regb_production_fees 
-            WHERE date(date) = date(?)
-            ORDER BY date DESC
-            """
-            df = pd.read_sql_query(query, conn, params=(self.handbook_date,))
-            conn.close()
-            return df
-        except Exception as e:
-            print(f"Warning: Could not fetch Reg-B data: {e}")
-            return pd.DataFrame()
+    def fetch_reg76_receipts(self):
+        """Fetch Reg-76 spirit receipts for the date"""
+        csv_path = "reg76_data.csv"
+        receipts = {}
+        if os.path.exists(csv_path):
+            try:
+                df = pd.read_csv(csv_path)
+                # Normalize column names just in case
+                df.columns = [c.strip().lower() for c in df.columns]
+                
+                # Check for date_receipt
+                date_col = next((c for c in df.columns if 'receipt' in c and 'date' in c), 'date_receipt')
+                
+                if date_col in df.columns:
+                    df[date_col] = pd.to_datetime(df[date_col]).dt.date
+                    daily_receipts = df[df[date_col] == self.handbook_date]
+                    
+                    for _, row in daily_receipts.iterrows():
+                        vat = row.get('storage_vat_no', '').strip()
+                        al = self.safe_float(row.get('rec_al', 0))
+                        
+                        if vat:
+                            if vat in receipts:
+                                receipts[vat] += al
+                            else:
+                                receipts[vat] = al
+                                
+            except Exception as e:
+                print(f"Warning: Could not read Reg76 data: {e}")
+        return receipts
     
     def create_header(self):
         """Create professional header"""
@@ -157,7 +172,7 @@ class EnhancedHandbookGenerator:
         elements.append(Paragraph(f"Date: {self.handbook_date.strftime('%d.%m.%Y')}", date_style))
         
         return elements
-    
+
     def create_sst_brt_detail(self):
         """Create comprehensive SST & BRT detail section"""
         elements = []
@@ -177,19 +192,26 @@ class EnhancedHandbookGenerator:
         elements.append(header_table)
         elements.append(Spacer(1, 0.1*inch))
         
-        # Fetch stock data
+        # Fetch data
         stock_df = self.fetch_reg74_stock()
+        receipts = self.fetch_reg76_receipts()
         
         # Create main table
+        # Added 'Received' column
         table_data = [
-            ['Vats', 'Dip (cm)', 'B.L.', '%v/v', 'A.L.']
+            ['Vats', 'Dip (cm)', 'B.L.', '%v/v', 'A.L.', 'Received\n(A.L.)']
         ]
         
         # SST Vats
         sst_total_bl = 0
         sst_total_al = 0
+        total_rec_al = 0
+        
         for vat_num in range(5, 11):  # SST-5 to SST-10
             vat_name = f'SST-{vat_num}'
+            rec_val = receipts.get(vat_name, 0.0)
+            total_rec_al += rec_val
+            
             if not stock_df.empty and 'source_vat' in stock_df.columns:
                 vat_data = stock_df[stock_df['source_vat'] == vat_name]
                 if not vat_data.empty:
@@ -207,21 +229,27 @@ class EnhancedHandbookGenerator:
                         f"{dip:.2f}" if dip > 0 else '-',
                         f"{bl:.2f}",
                         f"{strength:.2f}",
-                        f"{al:.2f}"
+                        f"{al:.2f}",
+                        f"{rec_val:.2f}" if rec_val > 0 else '-'
                     ])
                 else:
-                    table_data.append([vat_name, '-', '0.00', '0.00', '0.00'])
+                    table_data.append([vat_name, '-', '0.00', '0.00', '0.00', f"{rec_val:.2f}" if rec_val > 0 else '-'])
             else:
-                table_data.append([vat_name, '-', '0.00', '0.00', '0.00'])
+                table_data.append([vat_name, '-', '0.00', '0.00', '0.00', f"{rec_val:.2f}" if rec_val > 0 else '-'])
         
         # SST Subtotal
-        table_data.append(['A. Total (SST)', '', f"{sst_total_bl:.2f}", '', f"{sst_total_al:.2f}"])
+        sst_rec_subtotal = sum(receipts.get(f'SST-{i}', 0.0) for i in range(5, 11))
+        table_data.append(['A. Total (SST)', '', f"{sst_total_bl:.2f}", '', f"{sst_total_al:.2f}", f"{sst_rec_subtotal:.2f}" if sst_rec_subtotal > 0 else '-'])
         
         # BRT Vats
         brt_total_bl = 0
         brt_total_al = 0
+        
         for vat_num in range(11, 18):  # BRT-11 to BRT-17
             vat_name = f'BRT-{vat_num}'
+            rec_val = receipts.get(vat_name, 0.0)
+            total_rec_al += rec_val
+            
             if not stock_df.empty and 'source_vat' in stock_df.columns:
                 vat_data = stock_df[stock_df['source_vat'] == vat_name]
                 if not vat_data.empty:
@@ -239,23 +267,26 @@ class EnhancedHandbookGenerator:
                         f"{dip:.2f}" if dip > 0 else '-',
                         f"{bl:.2f}",
                         f"{strength:.2f}",
-                        f"{al:.2f}"
+                        f"{al:.2f}",
+                        f"{rec_val:.2f}" if rec_val > 0 else '-'
                     ])
                 else:
-                    table_data.append([vat_name, '-', '0.00', '0.00', '0.00'])
+                    table_data.append([vat_name, '-', '0.00', '0.00', '0.00', f"{rec_val:.2f}" if rec_val > 0 else '-'])
             else:
-                table_data.append([vat_name, '-', '0.00', '0.00', '0.00'])
+                table_data.append([vat_name, '-', '0.00', '0.00', '0.00', f"{rec_val:.2f}" if rec_val > 0 else '-'])
         
         # BRT Subtotal
-        table_data.append(['B. Total (BRT)', '', f"{brt_total_bl:.2f}", '', f"{brt_total_al:.2f}"])
+        brt_rec_subtotal = sum(receipts.get(f'BRT-{i}', 0.0) for i in range(11, 18))
+        table_data.append(['B. Total (BRT)', '', f"{brt_total_bl:.2f}", '', f"{brt_total_al:.2f}", f"{brt_rec_subtotal:.2f}" if brt_rec_subtotal > 0 else '-'])
         
         # Grand Total
         grand_total_bl = sst_total_bl + brt_total_bl
         grand_total_al = sst_total_al + brt_total_al
-        table_data.append(['Grand Total', '', f"{grand_total_bl:.2f}", '', f"{grand_total_al:.2f}"])
         
-        # Create table
-        table = Table(table_data, colWidths=[1.5*inch, 1.2*inch, 1.5*inch, 1.2*inch, 1.5*inch])
+        table_data.append(['Grand Total', '', f"{grand_total_bl:.2f}", '', f"{grand_total_al:.2f}", f"{total_rec_al:.2f}" if total_rec_al > 0 else '-'])
+        
+        # Create table - adjusted widths for new column
+        table = Table(table_data, colWidths=[1.5*inch, 1.0*inch, 1.3*inch, 1.0*inch, 1.3*inch, 1.2*inch])
         table.setStyle(TableStyle([
             # Header row
             ('BACKGROUND', (0, 0), (-1, 0), self.dark_navy),
@@ -466,7 +497,7 @@ class EnhancedHandbookGenerator:
         return elements
     
     def create_issued_bottles_detail(self):
-        """Create issued bottles detail from Reg-B"""
+        """Create issued bottles detail from Reg-B - Manual Entry (Empty fields)"""
         elements = []
         
         # Section header
@@ -484,8 +515,7 @@ class EnhancedHandbookGenerator:
         elements.append(header_table)
         elements.append(Spacer(1, 0.1*inch))
         
-        # Fetch Reg-B data
-        regb_df = self.fetch_regb_bottles()
+        # Manual Entry - No fetch needed
         
         table_data = [
             ['Size\n(ml)', 'Nominal\nStrength\n(%v/v)', 'Opening\nBalance', 'Quantity\nReceived', 'Total to be\nAccounted', 'Wastage/\nBreakage', 'Issue on\nPayment', 'Closing\nBalance']
@@ -494,12 +524,12 @@ class EnhancedHandbookGenerator:
         sizes = ['750', '600', '500', '375', '300', '180']
         
         for size in sizes:
-            # This is simplified - in real implementation, you'd aggregate by size
-            table_data.append([size, '', '0', '0', '0', '0', '0', '0'])
+            # Empty strings for manual entry
+            table_data.append([size, '', '', '', '', '', '', ''])
         
         # Total row
-        table_data.append(['Total', '', '0', '0', '0', '0', '0', '0'])
-        table_data.append(['Total Spirit in Hand (A.L.)', '', '', '', '', '', '', '0.00'])
+        table_data.append(['Total', '', '', '', '', '', '', ''])
+        table_data.append(['Total Spirit in Hand (A.L.)', '', '', '', '', '', '', ''])
         
         table = Table(table_data, colWidths=[0.8*inch, 1*inch, 1*inch, 1*inch, 1*inch, 1*inch, 1*inch, 1*inch])
         table.setStyle(TableStyle([

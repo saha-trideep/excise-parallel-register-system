@@ -20,6 +20,9 @@ REG74_COLUMNS = [
     "expected_opening_al",  # From previous closing
     "actual_opening_bl",  # Physical verification/dip
     "actual_opening_al",  # Calculated from dip
+    "opening_dip_cm",    # NEW: Opening Dip in CM
+    "opening_temp",      # NEW: Opening Temperature
+    "opening_indication", # NEW: Opening Alcoholmeter Indication
     "storage_wastage_bl",  # Expected - Actual
     "storage_wastage_al",  # Expected - Actual
     "storage_wastage_percentage",  # (Wastage / Expected) * 100
@@ -67,6 +70,7 @@ REG74_COLUMNS = [
     # Dip Measurements (Physical Verification)
     "dip_reading_cm",
     "dip_temp",
+    "closing_indication", # NEW: Closing Alcoholmeter Indication
     "dip_calculated_bl",
     "dip_variance_bl",
     

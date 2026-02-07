@@ -1,0 +1,56 @@
+﻿"""
+ULTRA PROFESSIONAL PDF REPORT GENERATOR - E+H BRANDED
+"""
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm, inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak, Image
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.pdfgen import canvas
+from collections import Counter
+import pandas as pd
+from datetime import datetime, date
+from maintenance_backend import get_maintenance_activities
+
+EH_BLUE = colors.HexColor('#00509E')
+EH_LIGHT_BLUE = colors.HexColor('#00AEEF')
+EH_DARK_BLUE = colors.HexColor('#003366')
+EH_GRAY = colors.HexColor('#F8F9FA')
+
+class WatermarkCanvas(canvas.Canvas):
+    def __init__(self, *args, **kwargs):
+        canvas.Canvas.__init__(self, *args, **kwargs)
+        self.pages = []
+    def showPage(self):
+        self.pages.append(dict(self.__dict__))
+        self._startPage()
+    def save(self):
+        page_count = len(self.pages)
+        for page_num, page in enumerate(self.pages, 1):
+            self.__dict__.update(page)
+            self.draw_page_elements(page_num, page_count)
+            canvas.Canvas.showPage(self)
+        canvas.Canvas.save(self)
+    def draw_page_elements(self, page_num, page_count):
+        try:
+            self.saveState()
+            self.setFillColor(colors.Color(0, 0.31, 0.62, alpha=0.03))
+            self.setFont("Helvetica-Bold", 120)
+            self.translate(A4[0]/2, A4[1]/2)
+            self.rotate(45)
+            self.drawCentredString(0, 0, "E+H")
+            self.restoreState()
+        except: pass
+        self.setStrokeColor(EH_BLUE)
+        self.setLineWidth(4)
+        self.line(0, A4[1] - 10*mm, A4[0], A4[1] - 10*mm)
+        self.setFillColor(EH_DARK_BLUE)
+        self.rect(0, 0, A4[0], 15*mm, fill=1, stroke=0)
+        self.setFillColor(colors.white)
+        self.setFont("Helvetica", 8)
+        self.drawString(20*mm, 8*mm, "Confidential/Internal - Endress+Hauser (India) Pvt Ltd.")
+        self.setFont("Helvetica-Bold", 9)
+        self.drawCentredString(A4[0]/2, 8*mm, "E+H")
+        self.setFont("Helvetica", 8)
+        self.drawRightString(A4[0] - 20*mm, 8*mm, f"Page {page_num} of {page_count}")

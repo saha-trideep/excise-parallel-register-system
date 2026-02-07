@@ -172,15 +172,22 @@ with st.sidebar:
         </div>
     """, unsafe_allow_html=True)
     
+    # Storage Location Info
+    import desktop_storage
+    st.success(f"💾 Data saved to Desktop")
+    st.caption(f"📁 {desktop_storage.EXCISE_FOLDER}")
+    
+    st.divider()
+    
     # Sync Status
     gs_client = reg76_backend.get_google_client()
     if gs_client:
-        st.success("🟢 Connected to Google Sheets")
+        st.success("🟢 Google Sheets Sync Active")
     else:
-        st.warning("🟡 Using Local Storage (CSV)")
-        with st.expander("How to Sync with GSheets"):
+        st.info("📊 Excel-only mode")
+        with st.expander("Enable Google Sheets Sync"):
             st.write("1. Create a Service Account in Google Cloud.")
-            st.write("2. Add the JSON key to `.streamlit/secrets.toml`.")
+            st.write("2. Add the JSON key to project folder.")
             st.write("3. Share your sheet with the service account email.")
 
     st.divider()
@@ -231,6 +238,7 @@ with tab_entry:
             num_tankers = st.number_input("No. of Tanker", value=1, disabled=True)
             tanker_cap = st.selectbox("Capacity of Tanker", ["Full", "Partial"])
             make_model = st.text_input("Make & Model of Tanker")
+            empty_drum_weight = st.number_input("Weight of Empty Drum/Tanker (kg)", min_value=0.0, step=0.1, format="%.1f")
             
         with c3:
             invoice_no = st.text_input("Invoice No.")
@@ -265,7 +273,7 @@ with tab_entry:
         # SECTION 3: ADVISED QUANTITY
         st.markdown('<div class="section-container">', unsafe_allow_html=True)
         st.markdown('<div class="section-header">SECTION 3 – ADVISED QUANTITY (AS PER PASS)</div>', unsafe_allow_html=True)
-        c7, c8, c9, c10 = st.columns(4)
+        c7, c8, c9, c10, c11 = st.columns(5)
         with c7:
             adv_w = st.number_input("Weight in Advice (kg)", min_value=0.0, step=0.001, format="%.3f")
         with c8:
@@ -274,6 +282,8 @@ with tab_entry:
             adv_s = st.number_input("Strength (% v/v)", min_value=0.0, max_value=100.0, step=0.01)
         with c10:
             adv_t = st.number_input("Temperature (°C)", value=20.0, step=0.1)
+        with c11:
+            adv_ind = st.text_input("Indication", help="As per advice")
             
         adv_bl = calculate_bl(adv_w, adv_d)
         adv_al = calculate_al(adv_bl, adv_s)
@@ -390,10 +400,12 @@ with tab_entry:
                         "date_arrival": str(date_arrival),
                         "date_receipt": str(date_receipt),
                         "days_in_transit": transit_days,
+                        "empty_drum_weight": empty_drum_weight,
                         "adv_weight_kg": adv_w,
                         "adv_avg_density": adv_d,
                         "adv_strength": adv_s,
                         "adv_temp": adv_t,
+                        "adv_indication": adv_ind,
                         "adv_bl": adv_bl,
                         "adv_al": adv_al,
                         "wb_laden_consignee": wb_l_c,
@@ -445,9 +457,11 @@ with tab_admin:
         )
         
         # Data Storage Info
-        st.info(f"""
-        📊 **Data Storage**: {len(records)} records stored locally in `reg76_data.csv` 
-        and synced to Google Sheets. Local file serves as backup and ensures zero data loss.
+        import desktop_storage
+        st.success(f"""
+        💾 **Data Storage**: {len(records)} records stored in Excel on your Desktop
+        📁 **Location**: `{desktop_storage.REG76_EXCEL_FILE}`
+        📊 **File**: Reg76_Data.xlsx
         """)
         
         # DELETE RECORD SECTION

@@ -257,7 +257,7 @@ with tab_entry:
         st.markdown('<div class="section-header">SECTION 2 – DATE & MOVEMENT</div>', unsafe_allow_html=True)
         c4, c5, c6 = st.columns(3)
         with c4:
-            date_dispatch = st.date_input("Date of Dispatch")
+            date_dispatch = st.date_input("Date of Dispatch*", key="dispatch_date")
         with c5:
             date_arrival = st.date_input("Date of Arrival")
         with c6:
@@ -277,13 +277,30 @@ with tab_entry:
             adv_d = st.number_input("Avg Density (gm/cc)", min_value=0.0, step=0.0001, format="%.4f")
         with c9:
             adv_s = st.number_input("Strength (% v/v)", min_value=0.0, max_value=100.0, step=0.01)
+            indication = st.selectbox(
+                "Indication*",
+                ["Clear", "Cloudy", "Sediment Present", "Normal", "Other"],
+                help="Visual observation of spirit quality"
+            )
+            if indication == "Other":
+                indication_other = st.text_input("Specify Indication")
+                indication = indication_other if indication_other else "Other"
         with c10:
             adv_t = st.number_input("Temperature (°C)", value=20.0, step=0.1)
             
         adv_bl = calculate_bl(adv_w, adv_d)
         adv_al = calculate_al(adv_bl, adv_s)
-        # BL at 20C calculation placeholder (assuming Density at 20C is same as Avg Density if not separate)
-        adv_bl_20c = adv_bl 
+        
+        # BL at 20C manual entry
+        col_bl20_adv, col_al_result = st.columns(2)
+        with col_bl20_adv:
+            adv_bl_20c = st.number_input(
+                "Volume in BL at 20°C (Manual Entry)*", 
+                min_value=0.0, 
+                step=0.01,
+                format="%.2f",
+                help="Enter the BL value corrected to 20°C as per measurement"
+            )
         
         m1, m2, m3 = st.columns(3)
         with m1: display_calc_result("Advised BL", adv_bl, "L")
@@ -294,6 +311,15 @@ with tab_entry:
         # SECTION 4: WEIGH BRIDGE
         st.markdown('<div class="section-container">', unsafe_allow_html=True)
         st.markdown('<div class="section-header">SECTION 4 – WEIGH BRIDGE DATA</div>', unsafe_allow_html=True)
+        
+        empty_tanker_weight = st.number_input(
+            "Weight of Empty Drum/Tanker (kg)*", 
+            min_value=0.0, 
+            step=0.1, 
+            format="%.1f",
+            help="Standard empty weight of the tanker"
+        )
+        
         w1, w2 = st.columns(2)
         with w1:
             st.markdown("**At Consignee (Present)**")
@@ -327,12 +353,21 @@ with tab_entry:
             
         rec_bl = calculate_bl(rec_m, rec_d_t)
         rec_al = calculate_al(rec_bl, rec_s)
-        diff_al = rec_al - adv_al
+        
+        # BL at 20C manual entry for received
+        rec_bl_20c = st.number_input(
+            "Volume in BL at 20°C (Manual Entry)*", 
+            min_value=0.0, 
+            step=0.01,
+            format="%.2f",
+            help="Enter the BL value corrected to 20°C as per MFM reading",
+            key="rec_bl_20c"
+        )
         
         m4, m5, m6 = st.columns(3)
         with m4: display_calc_result("Received BL", rec_bl, "L")
         with m5: display_calc_result("Received AL", rec_al, "L")
-        with m6: display_calc_result("Variance vs Advice", diff_al, "AL")
+        with m6: display_calc_result("Received BL at 20°C", rec_bl_20c, "L")
         st.markdown('</div>', unsafe_allow_html=True)
 
         # SECTION 6: WASTAGE
@@ -395,21 +430,26 @@ with tab_entry:
                         "date_arrival": str(date_arrival),
                         "date_receipt": str(date_receipt),
                         "days_in_transit": transit_days,
+                        "empty_tanker_weight_kg": empty_tanker_weight,
                         "adv_weight_kg": adv_w,
                         "adv_avg_density": adv_d,
                         "adv_strength": adv_s,
                         "adv_temp": adv_t,
+                        "indication": indication,
                         "adv_bl": adv_bl,
                         "adv_al": adv_al,
+                        "adv_bl_20c": adv_bl_20c,
                         "wb_laden_consignee": wb_l_c,
                         "wb_unladen_consignee": wb_u_c,
                         "rec_mass_kg": rec_m,
                         "rec_unload_temp": rec_t,
                         "rec_density_at_temp": rec_d_t,
+                        "rec_density_20c": rec_d_20,
                         "rec_strength": rec_s,
                         "rec_bl": rec_bl,
                         "rec_al": rec_al,
-                        "diff_advised_al": diff_al,
+                        "rec_bl_20c": rec_bl_20c,
+                        "diff_advised_al": rec_al - adv_al,
                         "transit_wastage_al": wastage_al,
                         "transit_increase_al": increase_val,
                         "chargeable_wastage_al": chargeable_al,

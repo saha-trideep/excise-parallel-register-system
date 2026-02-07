@@ -292,7 +292,7 @@ def display_storage_wastage_section(vat_no, vat_type="SST/BRT"):
     """)
     
     st.markdown("**Physical Verification (Dip Reading)**")
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         actual_bl = st.number_input(f"Actual BL (L)*", min_value=0.0, step=0.001, format="%.3f", key=f"actual_bl_{vat_no}")
     with c2:
@@ -301,6 +301,8 @@ def display_storage_wastage_section(vat_no, vat_type="SST/BRT"):
         dip_reading = st.number_input(f"Dip (cm)", min_value=0.0, step=0.1, key=f"dip_{vat_no}")
     with c4:
         dip_temp = st.number_input(f"Temp (°C)", value=20.0, step=0.1, key=f"dip_temp_{vat_no}")
+    with c5:
+        dip_indication = st.text_input(f"Indication", key=f"dip_ind_{vat_no}", help="Alcoholmeter Indication")
     
     # Calculate wastage
     if actual_bl > 0 or actual_al > 0:
@@ -343,6 +345,9 @@ def display_storage_wastage_section(vat_no, vat_type="SST/BRT"):
             "expected_al": expected_al,
             "actual_bl": actual_bl,
             "actual_al": actual_al,
+            "opening_dip": dip_reading,
+            "opening_temp": dip_temp,
+            "opening_indication": dip_indication,
             "wastage_bl": wastage_result['wastage_bl'],
             "wastage_al": wastage_result['wastage_al'],
             "wastage_percentage": wastage_result['wastage_percentage'],
@@ -730,6 +735,7 @@ with tab_entry:
     with c_r3:
         dip_reading = st.number_input("Dip Reading (cm)", min_value=0.0, step=0.1)
         dip_temp = st.number_input("Dip Temp (°C)", value=20.0, step=0.1)
+        dip_ind = st.text_input("Dip Indication", help="Alcoholmeter Indication")
     
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -783,6 +789,9 @@ with tab_entry:
                     "expected_opening_al": swdata.get("expected_al", 0.0),
                     "actual_opening_bl": swdata.get("actual_bl", 0.0),
                     "actual_opening_al": swdata.get("actual_al", 0.0),
+                    "opening_dip_cm": swdata.get("opening_dip", 0.0), # NEW
+                    "opening_temp": swdata.get("opening_temp", 0.0), # NEW
+                    "opening_indication": swdata.get("opening_indication", ""), # NEW
                     "storage_wastage_bl": swdata.get("wastage_bl", 0.0),
                     "storage_wastage_al": swdata.get("wastage_al", 0.0),
                     "storage_wastage_percentage": swdata.get("wastage_percentage", 0.0),
@@ -817,6 +826,7 @@ with tab_entry:
                     "wastage_remarks": "",
                     "dip_reading_cm": dip_reading,
                     "dip_temp": dip_temp,
+                    "closing_indication": dip_ind, # NEW
                     "dip_calculated_bl": 0.0,
                     "dip_variance_bl": 0.0,
                     "permit_no": permit_no if 'permit_no' in locals() else "",

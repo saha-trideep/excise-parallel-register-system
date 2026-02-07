@@ -30,14 +30,20 @@ REGA_COLUMNS = [
     
     # Bottle Production (Bottle-Centric Entry)
     "bottles_180ml",  # Count of 180ml bottles
+    "bottles_300ml",  # Count of 300ml bottles (NEW)
     "bottles_375ml",  # Count of 375ml bottles
+    "bottles_500ml",  # Count of 500ml bottles (NEW)
+    "bottles_600ml",  # Count of 600ml bottles (NEW)
     "bottles_750ml",  # Count of 750ml bottles
     "bottles_1000ml",  # Count of 1000ml bottles
     "total_bottles",  # Sum of all bottles
     
     # Calculated Bottle Volumes
     "bottles_bl_180ml",  # bottles_180ml × 0.180
+    "bottles_bl_300ml",  # bottles_300ml × 0.300 (NEW)
     "bottles_bl_375ml",  # bottles_375ml × 0.375
+    "bottles_bl_500ml",  # bottles_500ml × 0.500 (NEW)
+    "bottles_bl_600ml",  # bottles_600ml × 0.600 (NEW)
     "bottles_bl_750ml",  # bottles_750ml × 0.750
     "bottles_bl_1000ml",  # bottles_1000ml × 1.000
     "bottles_total_bl",  # Sum of all bottle BL
@@ -50,6 +56,8 @@ REGA_COLUMNS = [
     "allowable_limit",  # 0.1% constant
     "wastage_status",  # Within/Exceeds
     "wastage_note",  # Mandatory if exceeds 0.1%
+    "production_increase_al", # NEW: Negative wastage
+    "chargeable_wastage_al", # NEW: Calculated chargeable
     
     # BRT Closing Balance (After Production)
     "brt_issue_bl",  # Spirit issued from BRT (= MFM2 reading)
@@ -69,7 +77,10 @@ REGA_COLUMNS = [
     
     # Case Packing (Optional - for reference)
     "cases_180ml",  # Number of cases (12 bottles/case)
+    "cases_300ml",  # (NEW)
     "cases_375ml",  # Number of cases (12 bottles/case)
+    "cases_500ml",  # (NEW)
+    "cases_600ml",  # (NEW)
     "cases_750ml",  # Number of cases (12 bottles/case)
     "cases_1000ml",  # Number of cases (12 bottles/case)
     "total_cases",
@@ -110,7 +121,10 @@ PRODUCTION_SHIFTS = [
 # Bottle Sizes (in Litres)
 BOTTLE_SIZES = {
     "180ml": 0.180,
+    "300ml": 0.300, # NEW
     "375ml": 0.375,
+    "500ml": 0.500, # NEW
+    "600ml": 0.600, # NEW
     "750ml": 0.750,
     "1000ml": 1.000
 }
@@ -118,7 +132,10 @@ BOTTLE_SIZES = {
 # Bottles per Case (Standard)
 BOTTLES_PER_CASE = {
     "180ml": 48,  # 48 bottles per case
+    "300ml": 24,  # Assumed 24
     "375ml": 24,  # 24 bottles per case
+    "500ml": 12,  # Assumed 12
+    "600ml": 12,  # Assumed 12
     "750ml": 12,  # 12 bottles per case
     "1000ml": 12   # 12 bottles per case
 }
