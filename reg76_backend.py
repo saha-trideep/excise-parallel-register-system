@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import pandas as pd
 from datetime import datetime
 from schema import COLUMNS
@@ -7,8 +8,10 @@ from streamlit_gsheets import GSheetsConnection
 import gspread
 from google.oauth2.service_account import Credentials
 import desktop_storage  # New desktop storage module
+from reg76_sqlite_schema import CREATE_REG76_TABLE, CREATE_REG76_INDEXES
 
-CSV_PATH = "reg76_data.csv"
+CSV_PATH = "backup_data/reg76_data.csv"
+DB_PATH = "excise_registers.db"
 JSON_KEY = "the-program-482110-e4-7ef9d425d794.json"
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Ecmrq9JUhCerhq4mebO1Jtpw8sD_tTo-79_x3Jabr68"
 
@@ -35,6 +38,52 @@ def get_gsheet_connection():
     except Exception:
         return None
 
+def init_sqlite_db():
+    """Initialize SQLite database and tables if they don't exist"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.executescript(CREATE_REG76_TABLE)
+        cursor.executescript(CREATE_REG76_INDEXES)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        st.error(f"SQLite initialization error: {e}")
+
+def get_data_from_sqlite():
+    """Load data from SQLite database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        df = pd.read_sql_query("SELECT * FROM reg76_receipts ORDER BY date_receipt DESC", conn)
+        conn.close()
+        return df
+    except Exception as e:
+        st.warning(f"SQLite read error: {e}")
+        return pd.DataFrame(columns=COLUMNS)
+
+def save_to_sqlite(data_dict):
+    """Save record to SQLite database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Prepare column names and values
+        columns = list(data_dict.keys())
+        placeholders = ', '.join(['?' for _ in columns])
+        column_names = ', '.join(columns)
+        values = [data_dict[col] for col in columns]
+        
+        # Insert or replace record
+        query = f"INSERT OR REPLACE INTO reg76_receipts ({column_names}) VALUES ({placeholders})"
+        cursor.execute(query, values)
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        st.error(f"SQLite save error: {e}")
+        return False
+
 def get_data_local():
     """Load local CSV fallback"""
     if os.path.exists(CSV_PATH):
@@ -53,25 +102,42 @@ def get_data_local():
     return pd.DataFrame(columns=COLUMNS)
 
 def get_data():
-    """Load data - prioritized from Desktop Excel file"""
-    # Desktop Excel is now the primary source of truth
-    return desktop_storage.get_data_from_excel()
+    """Load data - prioritized from SQLite database"""
+    # SQLite is now the primary source of truth
+    init_sqlite_db()  # Ensure tables exist
+    return get_data_from_sqlite()
 
 def save_record(data_dict):
-    """Save record to Desktop Excel (primary), CSV (backup), and Google Sheets (sync)"""
+    """Save record to SQLite (primary), Desktop Excel (presentation), CSV (backup), and Google Sheets (sync)"""
     
-    # 1. Save to Desktop Excel (PRIMARY)
-    success_excel, message_excel, record_id = desktop_storage.add_record_to_excel(data_dict)
+    # Generate ID if not present
+    if "reg76_id" not in data_dict or not data_dict["reg76_id"]:
+        prefix = "R76-"
+        count = len(get_data()) + 1
+        data_dict["reg76_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:04d}"
     
-    if not success_excel:
-        st.error(message_excel)
+    # Add timestamps
+    data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_dict["status"] = data_dict.get("status", "draft")
+    record_id = data_dict["reg76_id"]
+    
+    # 1. Save to SQLite (PRIMARY STORAGE)
+    init_sqlite_db()  # Ensure tables exist
+    success_sqlite = save_to_sqlite(data_dict)
+    
+    if not success_sqlite:
+        st.error("❌ Failed to save to SQLite database!")
         return None
     
-    # Update data_dict with generated ID
-    data_dict["reg76_id"] = record_id
-    data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 2. Save to Desktop Excel (PRESENTATION LAYER)
+    try:
+        success_excel, message_excel, _ = desktop_storage.add_record_to_excel(data_dict)
+        if not success_excel:
+            st.warning(f"⚠️ Desktop Excel save failed: {message_excel}")
+    except Exception as e:
+        st.warning(f"⚠️ Desktop Excel save failed: {e}")
     
-    # 2. Save to Local CSV (BACKUP)
+    # 3. Save to Local CSV (BACKUP)
     try:
         df_local = get_data_local()
         new_row = pd.DataFrame([data_dict])
@@ -80,14 +146,34 @@ def save_record(data_dict):
     except Exception as e:
         st.warning(f"⚠️ CSV backup failed: {e}")
     
-    # 3. Sync to Google Sheets (OPTIONAL SYNC)
-    df_excel = desktop_storage.get_data_from_excel()
-    sync_success = sync_to_gsheet(df_excel)
+    # 4. Sync to Google Sheets (OPTIONAL SYNC)
+    try:
+        df_sqlite = get_data_from_sqlite()
+        sync_success = sync_to_gsheet(df_sqlite)
+    except Exception as e:
+        sync_success = False
+        st.warning(f"⚠️ Google Sheets sync failed: {e}")
     
+    # --- AUTOMATION HOOKS ---
+    try:
+        # Auto-generate Reg-78 Daily Synopsis
+        import reg78_backend
+        from datetime import datetime as dt
+        target_date = dt.strptime(data_dict["date_receipt"], "%Y-%m-%d").date()
+        synopsis_data = reg78_backend.generate_daily_synopsis(target_date)
+        if synopsis_data:
+            synopsis_data["synopsis_date"] = str(target_date)
+            reg78_backend.save_record(synopsis_data)
+            st.info("📊 Reg-78 Daily Synopsis auto-updated!")
+    except Exception as e:
+        st.warning(f"⚠️ Reg-78 auto-update failed: {e}")
+    # -------------------------
+    
+    # Success message
     if sync_success:
-        st.success(f"✅ Record saved to Desktop Excel AND synced to Google Sheets!\n📁 Location: {desktop_storage.REG76_EXCEL_FILE}")
+        st.success(f"✅ Record saved to SQLite AND synced to Google Sheets!\n📁 SQLite ID: {record_id}")
     else:
-        st.success(f"✅ Record saved to Desktop Excel!\n📁 Location: {desktop_storage.REG76_EXCEL_FILE}")
+        st.success(f"✅ Record saved to SQLite!\n📁 SQLite ID: {record_id}")
         st.info("ℹ️ Google Sheets sync failed - use manual sync button if needed.")
             
     return record_id

@@ -59,46 +59,48 @@ class EnhancedHandbookGenerator:
             return default
     
     def fetch_reg78_data(self):
-        """Fetch Reg-78 production fees data"""
-        csv_path = "reg78_data.csv"
-        if os.path.exists(csv_path):
-            try:
-                df = pd.read_csv(csv_path)
-                if 'date' in df.columns:
-                    df['date'] = pd.to_datetime(df['date']).dt.date
-                    return df[df['date'] == self.handbook_date]
-            except Exception as e:
-                print(f"Warning: Could not read {csv_path}: {e}")
+        """Fetch Reg-78 production fees data from SQLite"""
+        try:
+            conn = self.get_db_connection()
+            query = "SELECT * FROM reg78_synopsis WHERE synopsis_date = ?"
+            df = pd.read_sql_query(query, conn, params=(str(self.handbook_date),))
+            conn.close()
+            return df
+        except Exception as e:
+            print(f"Warning: Could not fetch Reg-78 data from SQLite: {e}")
         return pd.DataFrame()
     
     def fetch_reg74_stock(self):
-        """Fetch latest Reg-74 stock for all vats"""
-        csv_path = "reg74_data.csv"
-        if os.path.exists(csv_path):
-            try:
-                df = pd.read_csv(csv_path)
-                if 'operation_date' in df.columns:
-                    df['operation_date'] = pd.to_datetime(df['operation_date']).dt.date
-                    df = df[df['operation_date'] <= self.handbook_date]
-                    if not df.empty and 'source_vat' in df.columns:
-                        df = df.sort_values('operation_date', ascending=False)
-                        latest = df.groupby('source_vat').first().reset_index()
-                        return latest
-            except Exception as e:
-                print(f"Warning: Could not read {csv_path}: {e}")
+        """Fetch latest Reg-74 stock for all vats from SQLite"""
+        try:
+            conn = self.get_db_connection()
+            # Get latest record for each VAT up to the handbook date
+            query = """
+            SELECT * FROM reg74_operations 
+            WHERE operation_date <= ? 
+            ORDER BY operation_date DESC
+            """
+            df = pd.read_sql_query(query, conn, params=(str(self.handbook_date),))
+            conn.close()
+            
+            if not df.empty and 'source_vat' in df.columns:
+                # Group by VAT to get the latest status
+                latest = df.groupby('source_vat').first().reset_index()
+                return latest
+        except Exception as e:
+            print(f"Warning: Could not fetch Reg-74 stock from SQLite: {e}")
         return pd.DataFrame()
     
     def fetch_rega_production(self):
-        """Fetch Reg-A production data"""
-        csv_path = "rega_data.csv"
-        if os.path.exists(csv_path):
-            try:
-                df = pd.read_csv(csv_path)
-                if 'production_date' in df.columns:
-                    df['production_date'] = pd.to_datetime(df['production_date']).dt.date
-                    return df[df['production_date'] == self.handbook_date]
-            except Exception as e:
-                print(f"Warning: Could not read {csv_path}: {e}")
+        """Fetch Reg-A production data from SQLite"""
+        try:
+            conn = self.get_db_connection()
+            query = "SELECT * FROM rega_production WHERE production_date = ?"
+            df = pd.read_sql_query(query, conn, params=(str(self.handbook_date),))
+            conn.close()
+            return df
+        except Exception as e:
+            print(f"Warning: Could not fetch Reg-A data from SQLite: {e}")
         return pd.DataFrame()
     
     def fetch_regb_bottles(self):

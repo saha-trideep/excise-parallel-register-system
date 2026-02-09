@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import pandas as pd
 from datetime import datetime
 from reg74_schema import REG74_COLUMNS
@@ -17,8 +18,10 @@ except ImportError:
     GSPREAD_AVAILABLE = False
 
 import desktop_storage  # New desktop storage module
+from reg74_sqlite_schema import CREATE_REG74_TABLE, CREATE_REG74_INDEXES
 
-CSV_PATH = "reg74_data.csv"
+CSV_PATH = "backup_data/reg74_data.csv"
+DB_PATH = "excise_registers.db"
 JSON_KEY = "the-program-482110-e4-7ef9d425d794.json"
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Ecmrq9JUhCerhq4mebO1Jtpw8sD_tTo-79_x3Jabr68"
 WORKSHEET_NAME = "Reg74"  # Different worksheet for Reg-74
@@ -52,6 +55,52 @@ def get_google_client():
         st.warning(f"Google Sheets not available: {e}. Using local CSV.")
     return None
 
+def init_sqlite_db():
+    """Initialize SQLite database and tables if they don't exist"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.executescript(CREATE_REG74_TABLE)
+        cursor.executescript(CREATE_REG74_INDEXES)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        st.error(f"SQLite initialization error: {e}")
+
+def get_data_from_sqlite():
+    """Load data from SQLite database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        df = pd.read_sql_query("SELECT * FROM reg74_operations ORDER BY operation_date DESC", conn)
+        conn.close()
+        return df
+    except Exception as e:
+        st.warning(f"SQLite read error: {e}")
+        return pd.DataFrame(columns=REG74_COLUMNS)
+
+def save_to_sqlite(data_dict):
+    """Save record to SQLite database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Prepare column names and values
+        columns = list(data_dict.keys())
+        placeholders = ', '.join(['?' for _ in columns])
+        column_names = ', '.join(columns)
+        values = [data_dict[col] for col in columns]
+        
+        # Insert or replace record
+        query = f"INSERT OR REPLACE INTO reg74_operations ({column_names}) VALUES ({placeholders})"
+        cursor.execute(query, values)
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        st.error(f"SQLite save error: {e}")
+        return False
+
 def get_data_local():
     """Load local CSV fallback"""
     if os.path.exists(CSV_PATH):
@@ -62,26 +111,42 @@ def get_data_local():
     return pd.DataFrame(columns=REG74_COLUMNS)
 
 def get_data():
-    """Load data - prioritized from Desktop Excel"""
-    # Desktop Excel is now the primary source of truth
-    return desktop_storage.get_reg74_data_from_excel()
+    """Load data - prioritized from SQLite database"""
+    # SQLite is now the primary source of truth
+    init_sqlite_db()  # Ensure tables exist
+    return get_data_from_sqlite()
 
 def save_record(data_dict):
-    """Save record to Desktop Excel (primary), CSV (backup), and Google Sheets (sync)"""
+    """Save record to SQLite (primary), Desktop Excel (presentation), CSV (backup), and Google Sheets (sync)"""
     
-    # 1. Save to Desktop Excel (PRIMARY)
-    success_excel, message_excel, record_id = desktop_storage.add_reg74_record_to_excel(data_dict)
-    
-    if not success_excel:
-        st.error(message_excel)
-        return None
+    # 1. Generate ID and set timestamps if missing
+    if "reg74_id" not in data_dict or not data_dict["reg74_id"]:
+        prefix = "R74-"
+        count = len(get_data()) + 1
+        data_dict["reg74_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:04d}"
         
-    # Update data_dict with generated ID
-    data_dict["reg74_id"] = record_id
     data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data_dict["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_dict["status"] = data_dict.get("status", "draft")
+    record_id = data_dict["reg74_id"]
     
-    # 2. Save to Local CSV (BACKUP)
+    # 2. Save to SQLite (PRIMARY STORAGE)
+    init_sqlite_db()
+    success_sqlite = save_to_sqlite(data_dict)
+    
+    if not success_sqlite:
+        st.error("❌ Failed to save to SQLite database!")
+        return None
+
+    # 3. Save to Desktop Excel (PRESENTATION LAYER)
+    try:
+        success_excel, message_excel, _ = desktop_storage.add_reg74_record_to_excel(data_dict)
+        if not success_excel:
+            st.warning(f"⚠️ Desktop Excel save failed: {message_excel}")
+    except Exception as e:
+        st.warning(f"⚠️ Desktop Excel save failed: {e}")
+        
+    # 4. Save to Local CSV (BACKUP)
     try:
         df_local = get_data_local()
         new_row = pd.DataFrame([data_dict])
@@ -90,16 +155,33 @@ def save_record(data_dict):
     except Exception as e:
         st.warning(f"⚠️ CSV backup failed: {e}")
     
-    # 3. Attempt Sync
-    # For sync, we should ideally sync the Excel data, but for now syncing local might be safer/faster 
-    # if we assume sequential writes. However, to match Reg76 pattern:
-    df_excel = desktop_storage.get_reg74_data_from_excel()
-    sync_success = sync_to_gsheet(df_excel)
-    
+    # 5. Sync to Google Sheets (OPTIONAL SYNC)
+    sync_success = False
+    try:
+        df_sqlite = get_data_from_sqlite()
+        sync_success = sync_to_gsheet(df_sqlite)
+    except Exception as e:
+        st.warning(f"⚠️ Google Sheets sync failed: {e}")
+        
+    # --- AUTOMATION HOOKS ---
+    try:
+        # Auto-generate Reg-78 Daily Synopsis
+        import reg78_backend
+        from datetime import datetime as dt
+        target_date = dt.strptime(data_dict["operation_date"], "%Y-%m-%d").date()
+        synopsis_data = reg78_backend.generate_daily_synopsis(target_date)
+        if synopsis_data:
+            synopsis_data["synopsis_date"] = str(target_date)
+            reg78_backend.save_record(synopsis_data)
+            st.info("📊 Reg-78 Daily Synopsis auto-updated!")
+    except Exception as e:
+        st.warning(f"⚠️ Reg-78 auto-update failed: {e}")
+    # -------------------------
+
     if sync_success:
-        st.success(f"✅ Record saved to Desktop Excel AND synced to Google Sheets!\n📁 Location: {desktop_storage.REG74_EXCEL_FILE}")
+        st.success(f"✅ Record saved to SQLite AND synced to Google Sheets!\n📁 SQLite ID: {record_id}")
     else:
-        st.success(f"✅ Record saved to Desktop Excel!\n📁 Location: {desktop_storage.REG74_EXCEL_FILE}")
+        st.success(f"✅ Record saved to SQLite!\n📁 SQLite ID: {record_id}")
         st.info("ℹ️ Google Sheets sync failed - use manual sync button if needed.")
             
     return record_id
@@ -184,10 +266,14 @@ def get_vat_current_stock(vat_no):
     }
 
 def get_available_reg76_records():
-    """Get Reg-76 records that haven't been processed in Reg-74 yet"""
+    """Get Reg-76 records that haven't been processed in Reg-74 yet from SQLite"""
     try:
-        reg76_df = pd.read_csv("reg76_data.csv")
-        reg74_df = get_data()
+        # Load Reg-76 data from SQLite
+        conn = sqlite3.connect(DB_PATH) # excise_registers.db
+        reg76_df = pd.read_sql_query("SELECT * FROM reg76_receipts", conn)
+        conn.close()
+        
+        reg74_df = get_data() # Already uses SQLite
         
         if reg76_df.empty:
             return pd.DataFrame()
@@ -200,7 +286,8 @@ def get_available_reg76_records():
         # Filter unprocessed records
         available = reg76_df[~reg76_df['reg76_id'].isin(processed_ids)]
         return available
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching available Reg-76 from SQLite: {e}")
         return pd.DataFrame()
 
 def get_last_operation_date(vat_no):

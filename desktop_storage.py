@@ -1,189 +1,1 @@
-import os
-import pandas as pd
-from datetime import datetime
-from pathlib import Path
-
-# Desktop path configuration
-DESKTOP_PATH = Path.home() / "Desktop"
-EXCISE_FOLDER = DESKTOP_PATH / "Excise_Register_Data"
-REG76_EXCEL_FILE = EXCISE_FOLDER / "Reg76_Data.xlsx"
-
-# Ensure folder exists
-EXCISE_FOLDER.mkdir(parents=True, exist_ok=True)
-
-def get_excel_path():
-    """Returns the path to the Reg-76 Excel file on Desktop"""
-    return REG76_EXCEL_FILE
-
-def ensure_excel_file_exists():
-    """Create the Excel file if it doesn't exist"""
-    if not REG76_EXCEL_FILE.exists():
-        # Create empty DataFrame with all columns
-        from schema import COLUMNS
-        df = pd.DataFrame(columns=COLUMNS)
-        df.to_excel(REG76_EXCEL_FILE, index=False, sheet_name='Reg-76 Data')
-        print(f"✅ Created new Excel file: {REG76_EXCEL_FILE}")
-    return REG76_EXCEL_FILE
-
-def get_data_from_excel():
-    """Load data from Desktop Excel file"""
-    ensure_excel_file_exists()
-    try:
-        df = pd.read_excel(REG76_EXCEL_FILE, sheet_name='Reg-76 Data')
-        # Clean data
-        df = df.dropna(how='all')
-        if 'reg76_id' in df.columns:
-            df = df[df['reg76_id'].notna()]
-            df = df[df['reg76_id'].astype(str).str.strip() != '']
-        return df
-    except Exception as e:
-        print(f"Error reading Excel: {e}")
-        from schema import COLUMNS
-        return pd.DataFrame(columns=COLUMNS)
-
-def save_to_excel(df):
-    """Save DataFrame to Desktop Excel file"""
-    try:
-        ensure_excel_file_exists()
-        df.to_excel(REG76_EXCEL_FILE, index=False, sheet_name='Reg-76 Data')
-        return True, f"✅ Data saved to: {REG76_EXCEL_FILE}"
-    except Exception as e:
-        return False, f"❌ Error saving to Excel: {str(e)}"
-
-def add_record_to_excel(data_dict):
-    """Add a new record to the Excel file"""
-    df = get_data_from_excel()
-    
-    # Generate ID if not present
-    if "reg76_id" not in data_dict or not data_dict["reg76_id"]:
-        prefix = "R76-"
-        count = len(df) + 1
-        data_dict["reg76_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:03d}"
-    
-    data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Add new row
-    new_row = pd.DataFrame([data_dict])
-    df = pd.concat([df, new_row], ignore_index=True)
-    
-    # Save to Excel
-    success, message = save_to_excel(df)
-    return success, message, data_dict["reg76_id"]
-
-def delete_record_from_excel(reg76_id):
-    """Delete a record from Excel file"""
-    try:
-        df = get_data_from_excel()
-        
-        if df.empty:
-            return False, "No records found"
-        
-        if reg76_id not in df['reg76_id'].values:
-            return False, f"Record {reg76_id} not found"
-        
-        # Remove record
-        df = df[df['reg76_id'] != reg76_id]
-        
-        # Save
-        success, message = save_to_excel(df)
-        if success:
-            return True, f"✅ Record {reg76_id} deleted"
-        else:
-            return False, message
-            
-    except Exception as e:
-        return False, f"Error: {str(e)}"
-
-def clear_all_excel_data():
-    """Clear all data from Excel file"""
-    try:
-        from schema import COLUMNS
-        empty_df = pd.DataFrame(columns=COLUMNS)
-        success, message = save_to_excel(empty_df)
-        return success, message
-    except Exception as e:
-        return False, f"Error: {str(e)}"
-
-def export_to_csv(df, filename=None):
-    """Export data to CSV on Desktop"""
-    if filename is None:
-        filename = f"Reg76_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    
-    csv_path = EXCISE_FOLDER / filename
-    try:
-        df.to_csv(csv_path, index=False)
-        return True, f"✅ Exported to: {csv_path}"
-    except Exception as e:
-        return False, f"Error: {str(e)}"
-
-# --- REG-74 STORAGE FUNCTIONS ---
-
-REG74_EXCEL_FILE = EXCISE_FOLDER / "Reg74_Data.xlsx"
-
-def ensure_reg74_excel_exists():
-    """Create the Reg-74 Excel file if it doesn't exist"""
-    if not REG74_EXCEL_FILE.exists():
-        # Create empty DataFrame with all columns
-        try:
-            from reg74_schema import REG74_COLUMNS
-            df = pd.DataFrame(columns=REG74_COLUMNS)
-            df.to_excel(REG74_EXCEL_FILE, index=False, sheet_name='Reg-74 Data')
-            print(f"✅ Created new Excel file: {REG74_EXCEL_FILE}")
-        except ImportError:
-            print("⚠️ reg74_schema not found, creating generic empty file")
-            df = pd.DataFrame()
-            df.to_excel(REG74_EXCEL_FILE, index=False, sheet_name='Reg-74 Data')
-    return REG74_EXCEL_FILE
-
-def get_reg74_data_from_excel():
-    """Load data from Reg-74 Desktop Excel file"""
-    ensure_reg74_excel_exists()
-    try:
-        df = pd.read_excel(REG74_EXCEL_FILE, sheet_name='Reg-74 Data')
-        # Clean data
-        df = df.dropna(how='all')
-        if 'reg74_id' in df.columns:
-            df = df[df['reg74_id'].notna()]
-            df = df[df['reg74_id'].astype(str).str.strip() != '']
-        return df
-    except Exception as e:
-        print(f"Error reading Reg-74 Excel: {e}")
-        try:
-            from reg74_schema import REG74_COLUMNS
-            return pd.DataFrame(columns=REG74_COLUMNS)
-        except:
-            return pd.DataFrame()
-
-def save_reg74_to_excel(df):
-    """Save Reg-74 DataFrame to Desktop Excel file"""
-    try:
-        ensure_reg74_excel_exists()
-        df.to_excel(REG74_EXCEL_FILE, index=False, sheet_name='Reg-74 Data')
-        return True, f"✅ Data saved to: {REG74_EXCEL_FILE}"
-    except Exception as e:
-        return False, f"❌ Error saving to Reg-74 Excel: {str(e)}"
-
-def add_reg74_record_to_excel(data_dict):
-    """Add a new record to the Reg-74 Excel file"""
-    df = get_reg74_data_from_excel()
-    
-    # Generate ID if not present
-    if "reg74_id" not in data_dict or not data_dict["reg74_id"]:
-        prefix = "R74-"
-        count = len(df) + 1
-        data_dict["reg74_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:03d}"
-    
-    data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Add new row
-    new_row = pd.DataFrame([data_dict])
-    df = pd.concat([df, new_row], ignore_index=True)
-    
-    # Save to Excel
-    success, message = save_reg74_to_excel(df)
-    return success, message, data_dict["reg74_id"]
-
-# Print initialization message
-print(f"📁 Excise Register Data Folder: {EXCISE_FOLDER}")
-print(f"📊 Reg-76 Excel File: {REG76_EXCEL_FILE}")
-print(f"📊 Reg-74 Excel File: {REG74_EXCEL_FILE}")
+diff --git a/desktop_storage.py b/desktop_storage.pyindex 720187c39e30e222115c8cf3ddf9e7dc2d62ed3f..8daab635109c0309a9f126214540510d7964ef5b 100644--- a/desktop_storage.py+++ b/desktop_storage.py@@ -97,50 +97,54 @@ def delete_record_from_excel(reg76_id):def clear_all_excel_data():"""Clear all data from Excel file"""try:from schema import COLUMNSempty_df = pd.DataFrame(columns=COLUMNS)success, message = save_to_excel(empty_df)return success, messageexcept Exception as e:return False, f"Error: {str(e)}"def export_to_csv(df, filename=None):"""Export data to CSV on Desktop"""if filename is None:filename = f"Reg76_Export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"     csv_path = EXCISE_FOLDER / filename     try:         df.to_csv(csv_path, index=False)         return True, f"✅ Exported to: {csv_path}"     except Exception as e:         return False, f"Error: {str(e)}" --- REG-74 STORAGE FUNCTIONS ---REG74_EXCEL_FILE = EXCISE_FOLDER / "Reg74_Data.xlsx"+REGA_EXCEL_FILE = EXCISE_FOLDER / "RegA_Data.xlsx"+REGB_EXCEL_FILE = EXCISE_FOLDER / "RegB_Data.xlsx"+EXCISE_DUTY_EXCEL_FILE = EXCISE_FOLDER / "Excise_Duty_Data.xlsx"+REG78_EXCEL_FILE = EXCISE_FOLDER / "Reg78_Data.xlsx"def ensure_reg74_excel_exists():"""Create the Reg-74 Excel file if it doesn't exist"""if not REG74_EXCEL_FILE.exists():# Create empty DataFrame with all columnstry:from reg74_schema import REG74_COLUMNSdf = pd.DataFrame(columns=REG74_COLUMNS)df.to_excel(REG74_EXCEL_FILE, index=False, sheet_name='Reg-74 Data')print(f"✅ Created new Excel file: {REG74_EXCEL_FILE}")except ImportError:print("⚠️ reg74_schema not found, creating generic empty file")df = pd.DataFrame()df.to_excel(REG74_EXCEL_FILE, index=False, sheet_name='Reg-74 Data')return REG74_EXCEL_FILEdef get_reg74_data_from_excel():"""Load data from Reg-74 Desktop Excel file"""ensure_reg74_excel_exists()try:df = pd.read_excel(REG74_EXCEL_FILE, sheet_name='Reg-74 Data')# Clean datadf = df.dropna(how='all')if 'reg74_id' in df.columns:df = df[df['reg74_id'].notna()]@@ -161,29 +165,352 @@ def save_reg74_to_excel(df):df.to_excel(REG74_EXCEL_FILE, index=False, sheet_name='Reg-74 Data')return True, f"✅ Data saved to: {REG74_EXCEL_FILE}"except Exception as e:return False, f"❌ Error saving to Reg-74 Excel: {str(e)}"def add_reg74_record_to_excel(data_dict):"""Add a new record to the Reg-74 Excel file"""df = get_reg74_data_from_excel()     # Generate ID if not present     if "reg74_id" not in data_dict or not data_dict["reg74_id"]:         prefix = "R74-"         count = len(df) + 1         data_dict["reg74_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:03d}"          data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")          # Add new row     new_row = pd.DataFrame([data_dict])     df = pd.concat([df, new_row], ignore_index=True)          # Save to Excel     success, message = save_reg74_to_excel(df)     return success, message, data_dict["reg74_id"] +# --- REG-A STORAGE FUNCTIONS ---++def ensure_rega_excel_exists():"""Create the Reg-A Excel file if it doesn't exist"""if not REGA_EXCEL_FILE.exists():   try:       from rega_schema import REGA_COLUMNS       df = pd.DataFrame(columns=REGA_COLUMNS)       df.to_excel(REGA_EXCEL_FILE, index=False, sheet_name="Reg-A Data")       print(f"✅ Created new Excel file: {REGA_EXCEL_FILE}")   except ImportError:       print("⚠️ rega_schema not found, creating generic empty file")       df = pd.DataFrame()       df.to_excel(REGA_EXCEL_FILE, index=False, sheet_name="Reg-A Data")return REGA_EXCEL_FILE+def get_rega_data_from_excel():"""Load data from Reg-A Desktop Excel file"""ensure_rega_excel_exists()try:   df = pd.read_excel(REGA_EXCEL_FILE, sheet_name="Reg-A Data")   df = df.dropna(how="all")   if "rega_id" in df.columns:       df = df[df["rega_id"].notna()]       df = df[df["rega_id"].astype(str).str.strip() != ""]   return dfexcept Exception as e:   print(f"Error reading Reg-A Excel: {e}")   try:       from rega_schema import REGA_COLUMNS       return pd.DataFrame(columns=REGA_COLUMNS)   except Exception:       return pd.DataFrame()+def save_rega_to_excel(df):"""Save Reg-A DataFrame to Desktop Excel file"""try:   ensure_rega_excel_exists()   df.to_excel(REGA_EXCEL_FILE, index=False, sheet_name="Reg-A Data")   return True, f"✅ Data saved to: {REGA_EXCEL_FILE}"except Exception as e:   return False, f"❌ Error saving to Reg-A Excel: {str(e)}"+def add_rega_record_to_excel(data_dict):"""Add or update a Reg-A record in the Excel file"""df = get_rega_data_from_excel()if "rega_id" in data_dict and data_dict["rega_id"]:   df = df[df.get("rega_id").astype(str) != str(data_dict["rega_id"])]new_row = pd.DataFrame([data_dict])df = pd.concat([df, new_row], ignore_index=True)success, message = save_rega_to_excel(df)return success, message, data_dict.get("rega_id")+# --- REG-78 STORAGE FUNCTIONS ---++def ensure_reg78_excel_exists():"""Create the Reg-78 Excel file if it doesn't exist"""if not REG78_EXCEL_FILE.exists():   try:       from reg78_schema import REG78_COLUMNS       df = pd.DataFrame(columns=REG78_COLUMNS)       df.to_excel(REG78_EXCEL_FILE, index=False, sheet_name="Reg-78 Data")       print(f"✅ Created new Excel file: {REG78_EXCEL_FILE}")   except ImportError:       print("⚠️ reg78_schema not found, creating generic empty file")       df = pd.DataFrame()       df.to_excel(REG78_EXCEL_FILE, index=False, sheet_name="Reg-78 Data")return REG78_EXCEL_FILE+def get_reg78_data_from_excel():"""Load data from Reg-78 Desktop Excel file"""ensure_reg78_excel_exists()try:   df = pd.read_excel(REG78_EXCEL_FILE, sheet_name="Reg-78 Data")   df = df.dropna(how="all")   if "reg78_id" in df.columns:       df = df[df["reg78_id"].notna()]       df = df[df["reg78_id"].astype(str).str.strip() != ""]   return dfexcept Exception as e:   print(f"Error reading Reg-78 Excel: {e}")   try:       from reg78_schema import REG78_COLUMNS       return pd.DataFrame(columns=REG78_COLUMNS)   except Exception:       return pd.DataFrame()+def save_reg78_to_excel(df):"""Save Reg-78 DataFrame to Desktop Excel file"""try:   ensure_reg78_excel_exists()   df.to_excel(REG78_EXCEL_FILE, index=False, sheet_name="Reg-78 Data")   return True, f"✅ Data saved to: {REG78_EXCEL_FILE}"except Exception as e:   return False, f"❌ Error saving to Reg-78 Excel: {str(e)}"+def add_reg78_record_to_excel(data_dict):"""Add or update a Reg-78 record in the Excel file"""df = get_reg78_data_from_excel()synopsis_date = str(data_dict.get("synopsis_date") or "")if synopsis_date and "synopsis_date" in df.columns:   df = df[df["synopsis_date"].astype(str) != synopsis_date]new_row = pd.DataFrame([data_dict])df = pd.concat([df, new_row], ignore_index=True)success, message = save_reg78_to_excel(df)return success, message, data_dict.get("reg78_id")+# --- REG-B STORAGE FUNCTIONS ---++REGB_FEES_SHEET = "Production Fees"+REGB_STOCK_SHEET = "Bottle Stock"++REGB_FEES_COLUMNS = ["regb_fees_id","date","opening_balance","deposit_amount","echallan_no","echallan_date","total_credited","iml_bottles_qty","total_bottles_produced","fee_per_bottle","total_fees_debited","closing_balance","remarks","excise_officer_name","excise_officer_signature","status","created_at","updated_at",+]+REGB_STOCK_COLUMNS = ["regb_stock_id","date","product_name","strength","bottle_size_ml","opening_balance_bottles","quantity_received_bottles","total_accounted_bottles","wastage_breakage_bottles","issue_on_duty_bottles","closing_balance_bottles","opening_balance_bl","received_bl","total_bl","wastage_bl","issue_bl","closing_bl","opening_balance_al","received_al","total_al","wastage_al","issue_al","closing_al","status","created_at","updated_at",+]+def _ensure_regb_excel_exists():if not REGB_EXCEL_FILE.exists():   with pd.ExcelWriter(REGB_EXCEL_FILE, engine="openpyxl") as writer:       pd.DataFrame(columns=REGB_FEES_COLUMNS).to_excel(           writer, index=False, sheet_name=REGB_FEES_SHEET       )       pd.DataFrame(columns=REGB_STOCK_COLUMNS).to_excel(           writer, index=False, sheet_name=REGB_STOCK_SHEET       )   print(f"✅ Created new Excel file: {REGB_EXCEL_FILE}")return REGB_EXCEL_FILE+def _load_regb_sheet(sheet_name: str, columns: list) -> pd.DataFrame:_ensure_regb_excel_exists()try:   df = pd.read_excel(REGB_EXCEL_FILE, sheet_name=sheet_name)   df = df.dropna(how="all")   return dfexcept Exception:   return pd.DataFrame(columns=columns)+def _save_regb_sheets(fees_df: pd.DataFrame, stock_df: pd.DataFrame) -> tuple:try:   _ensure_regb_excel_exists()   with pd.ExcelWriter(REGB_EXCEL_FILE, engine="openpyxl") as writer:       fees_df.to_excel(writer, index=False, sheet_name=REGB_FEES_SHEET)       stock_df.to_excel(writer, index=False, sheet_name=REGB_STOCK_SHEET)   return True, f"✅ Data saved to: {REGB_EXCEL_FILE}"except Exception as e:   return False, f"❌ Error saving to Reg-B Excel: {str(e)}"+def _column_series(df: pd.DataFrame, name: str) -> pd.Series:if name in df.columns:   return df[name].astype(str)return pd.Series([], dtype=str)+def save_regb_fees_to_excel(data_dict):fees_df = _load_regb_sheet(REGB_FEES_SHEET, REGB_FEES_COLUMNS)key_date = str(data_dict.get("date") or "")if key_date:   fees_df = fees_df[_column_series(fees_df, "date") != key_date]fees_df = pd.concat([fees_df, pd.DataFrame([data_dict])], ignore_index=True)stock_df = _load_regb_sheet(REGB_STOCK_SHEET, REGB_STOCK_COLUMNS)return _save_regb_sheets(fees_df, stock_df)+def save_regb_bottle_stock_to_excel(data_dict):fees_df = _load_regb_sheet(REGB_FEES_SHEET, REGB_FEES_COLUMNS)stock_df = _load_regb_sheet(REGB_STOCK_SHEET, REGB_STOCK_COLUMNS)if not stock_df.empty:   match = (       (_column_series(stock_df, "date") == str(data_dict.get("date")))       & (_column_series(stock_df, "product_name") == str(data_dict.get("product_name")))       & (_column_series(stock_df, "strength") == str(data_dict.get("strength")))       & (_column_series(stock_df, "bottle_size_ml") == str(data_dict.get("bottle_size_ml")))   )   stock_df = stock_df[~match]stock_df = pd.concat([stock_df, pd.DataFrame([data_dict])], ignore_index=True)return _save_regb_sheets(fees_df, stock_df)+# --- EXCISE DUTY STORAGE FUNCTIONS ---++EXCISE_LEDGER_SHEET = "Duty Ledger"+EXCISE_BOTTLES_SHEET = "Issued Bottles"++EXCISE_LEDGER_COLUMNS = ["duty_id","date","opening_balance","deposit_amount","echallan_no","echallan_date","amount_credited","name_of_issue","warehouse_no","transport_permit_no","total_duty_amount","duty_debited","closing_balance","remarks","excise_officer_name","excise_officer_signature","status","created_at","updated_at",+]+EXCISE_BOTTLES_COLUMNS = ["duty_bottle_id","duty_id","date","product_name","strength","bottle_size_ml","qty_issued","bl_issued","al_issued","duty_rate_per_bl","duty_amount","status","created_at","updated_at",+]+def _ensure_excise_excel_exists():if not EXCISE_DUTY_EXCEL_FILE.exists():   with pd.ExcelWriter(EXCISE_DUTY_EXCEL_FILE, engine="openpyxl") as writer:       pd.DataFrame(columns=EXCISE_LEDGER_COLUMNS).to_excel(           writer, index=False, sheet_name=EXCISE_LEDGER_SHEET       )       pd.DataFrame(columns=EXCISE_BOTTLES_COLUMNS).to_excel(           writer, index=False, sheet_name=EXCISE_BOTTLES_SHEET       )   print(f"✅ Created new Excel file: {EXCISE_DUTY_EXCEL_FILE}")return EXCISE_DUTY_EXCEL_FILE+def _load_excise_sheet(sheet_name: str, columns: list) -> pd.DataFrame:_ensure_excise_excel_exists()try:   df = pd.read_excel(EXCISE_DUTY_EXCEL_FILE, sheet_name=sheet_name)   df = df.dropna(how="all")   return dfexcept Exception:   return pd.DataFrame(columns=columns)+def _save_excise_sheets(ledger_df: pd.DataFrame, bottles_df: pd.DataFrame) -> tuple:try:   _ensure_excise_excel_exists()   with pd.ExcelWriter(EXCISE_DUTY_EXCEL_FILE, engine="openpyxl") as writer:       ledger_df.to_excel(writer, index=False, sheet_name=EXCISE_LEDGER_SHEET)       bottles_df.to_excel(writer, index=False, sheet_name=EXCISE_BOTTLES_SHEET)   return True, f"✅ Data saved to: {EXCISE_DUTY_EXCEL_FILE}"except Exception as e:   return False, f"❌ Error saving to Excise Duty Excel: {str(e)}"+def save_excise_ledger_to_excel(data_dict):ledger_df = _load_excise_sheet(EXCISE_LEDGER_SHEET, EXCISE_LEDGER_COLUMNS)key_date = str(data_dict.get("date") or "")if key_date:   ledger_df = ledger_df[_column_series(ledger_df, "date") != key_date]ledger_df = pd.concat([ledger_df, pd.DataFrame([data_dict])], ignore_index=True)bottles_df = _load_excise_sheet(EXCISE_BOTTLES_SHEET, EXCISE_BOTTLES_COLUMNS)return _save_excise_sheets(ledger_df, bottles_df)+def save_excise_bottle_to_excel(data_dict):ledger_df = _load_excise_sheet(EXCISE_LEDGER_SHEET, EXCISE_LEDGER_COLUMNS)bottles_df = _load_excise_sheet(EXCISE_BOTTLES_SHEET, EXCISE_BOTTLES_COLUMNS)if not bottles_df.empty:   match = (       (_column_series(bottles_df, "date") == str(data_dict.get("date")))       & (_column_series(bottles_df, "product_name") == str(data_dict.get("product_name")))       & (_column_series(bottles_df, "strength") == str(data_dict.get("strength")))       & (_column_series(bottles_df, "bottle_size_ml") == str(data_dict.get("bottle_size_ml")))   )   bottles_df = bottles_df[~match]bottles_df = pd.concat([bottles_df, pd.DataFrame([data_dict])], ignore_index=True)return _save_excise_sheets(ledger_df, bottles_df)Print initialization messageprint(f"📁 Excise Register Data Folder: {EXCISE_FOLDER}")print(f"📊 Reg-76 Excel File: {REG76_EXCEL_FILE}")print(f"📊 Reg-74 Excel File: {REG74_EXCEL_FILE}")+print(f"📊 Reg-A Excel File: {REGA_EXCEL_FILE}")+print(f"📊 Reg-B Excel File: {REGB_EXCEL_FILE}")+print(f"📊 Excise Duty Excel File: {EXCISE_DUTY_EXCEL_FILE}")+print(f"📊 Reg-78 Excel File: {REG78_EXCEL_FILE}")

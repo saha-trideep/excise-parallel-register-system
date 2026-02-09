@@ -1,12 +1,16 @@
 import os
+import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
 from reg78_schema import REG78_COLUMNS, PRODUCTION_FEES_RATE_PER_BL, ALL_VATS, SST_VATS, BRT_VATS
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
+import desktop_storage
+from reg78_sqlite_schema import CREATE_REG78_TABLE, CREATE_REG78_INDEXES
 
-CSV_PATH = "reg78_data.csv"
+CSV_PATH = "backup_data/reg78_data.csv"
+DB_PATH = "excise_registers.db"
 JSON_KEY = "the-program-482110-e4-7ef9d425d794.json"
 SPREADSHEET_URL = "https://docs.google.com/spreadsheets/d/1Ecmrq9JUhCerhq4mebO1Jtpw8sD_tTo-79_x3Jabr68"
 WORKSHEET_NAME = "Reg78"  # Daily synopsis worksheet
@@ -25,6 +29,52 @@ def get_google_client():
         st.error(f"GSpread Auth Error: {e}")
     return None
 
+def init_sqlite_db():
+    """Initialize SQLite database and tables if they don't exist"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.executescript(CREATE_REG78_TABLE)
+        cursor.executescript(CREATE_REG78_INDEXES)
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        st.error(f"SQLite initialization error: {e}")
+
+def get_data_from_sqlite():
+    """Load data from SQLite database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        df = pd.read_sql_query("SELECT * FROM reg78_synopsis ORDER BY synopsis_date DESC", conn)
+        conn.close()
+        return df
+    except Exception as e:
+        st.warning(f"SQLite read error: {e}")
+        return pd.DataFrame(columns=REG78_COLUMNS)
+
+def save_to_sqlite(data_dict):
+    """Save record to SQLite database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Prepare column names and values
+        columns = list(data_dict.keys())
+        placeholders = ', '.join(['?' for _ in columns])
+        column_names = ', '.join(columns)
+        values = [data_dict[col] for col in columns]
+        
+        # Insert or replace record
+        query = f"INSERT OR REPLACE INTO reg78_synopsis ({column_names}) VALUES ({placeholders})"
+        cursor.execute(query, values)
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        st.error(f"SQLite save error: {e}")
+        return False
+
 def get_data_local():
     """Load local CSV fallback"""
     if os.path.exists(CSV_PATH):
@@ -35,36 +85,64 @@ def get_data_local():
     return pd.DataFrame(columns=REG78_COLUMNS)
 
 def get_data():
-    """Load data - prioritized from Local CSV for speed"""
-    return get_data_local()
+    """Load data - prioritized from SQLite database"""
+    init_sqlite_db()
+    return get_data_from_sqlite()
 
 def save_record(data_dict):
-    """Save record to local CSV first, then attempt push using gspread"""
-    df_local = get_data_local()
+    """Save record to SQLite (primary), Desktop Excel (presentation), CSV (backup), and Google Sheets (sync)"""
     
-    # ID Generation
+    # ID Generation and Timestamps
     if "reg78_id" not in data_dict or not data_dict["reg78_id"]:
         prefix = "R78-"
-        count = len(df_local) + 1
+        count = len(get_data()) + 1
         data_dict["reg78_id"] = f"{prefix}{datetime.now().strftime('%Y%m')}{count:04d}"
     
     data_dict["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     data_dict["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_dict["status"] = data_dict.get("status", "draft")
+    record_id = data_dict["reg78_id"]
+
+    # 1. Save to SQLite (PRIMARY STORAGE)
+    init_sqlite_db()
+    success_sqlite = save_to_sqlite(data_dict)
     
-    # 1. Update Local CSV (Always)
-    new_row = pd.DataFrame([data_dict])
-    df_local = pd.concat([df_local, new_row], ignore_index=True)
-    df_local.to_csv(CSV_PATH, index=False)
+    if not success_sqlite:
+        st.error("❌ Failed to save to SQLite database!")
+        return None
+
+    # 2. Save to Desktop Excel (PRESENTATION LAYER)
+    try:
+        success_excel, message_excel, _ = desktop_storage.add_reg78_record_to_excel(data_dict)
+        if not success_excel:
+            st.warning(f"⚠️ Desktop Excel save failed: {message_excel}")
+    except Exception as e:
+        st.warning(f"⚠️ Desktop Excel save failed: {e}")
+
+    # 3. Update Local CSV (BACKUP)
+    try:
+        df_local = get_data_local()
+        new_row = pd.DataFrame([data_dict])
+        df_local = pd.concat([df_local, new_row], ignore_index=True)
+        df_local.to_csv(CSV_PATH, index=False)
+    except Exception as e:
+        st.warning(f"⚠️ CSV backup failed: {e}")
     
-    # 2. Attempt Sync
-    sync_success = sync_to_gsheet(df_local)
+    # 4. Attempt Sync
+    sync_success = False
+    try:
+        df_sqlite = get_data_from_sqlite()
+        sync_success = sync_to_gsheet(df_sqlite)
+    except Exception as e:
+        st.warning(f"⚠️ Google Sheets sync failed: {e}")
     
     if sync_success:
-        st.success("✅ Daily Synopsis saved and synced to Google Sheets!")
+        st.success(f"✅ Daily Synopsis saved to SQLite AND synced to Google Sheets!\n📁 SQLite ID: {record_id}")
     else:
-        st.warning("⚠️ Synopsis saved locally. Google Sheets sync failed - use manual sync button.")
+        st.success(f"✅ Daily Synopsis saved to SQLite!\n📁 SQLite ID: {record_id}")
+        st.info("ℹ️ Google Sheets sync failed - use manual sync button if needed.")
             
-    return data_dict["reg78_id"]
+    return record_id
 
 def sync_to_gsheet(df):
     """Sync a dataframe to the Google Sheet using direct gspread"""
@@ -126,23 +204,13 @@ def get_previous_day_closing(target_date):
     return {"bl": 0.0, "al": 0.0}
 
 def get_reg76_daily_summary(target_date):
-    """Get all Reg-76 receipts for a specific date"""
+    """Get all Reg-76 receipts for a specific date from SQLite"""
     try:
-        reg76_df = pd.read_csv("reg76_data.csv")
-        
-        if reg76_df.empty:
-            return {
-                "count": 0,
-                "pass_numbers": "",
-                "total_bl": 0.0,
-                "total_al": 0.0,
-                "mfm1_bl": 0.0,
-                "mfm1_al": 0.0
-            }
-        
-        # Filter by date
-        reg76_df['receipt_date_dt'] = pd.to_datetime(reg76_df['receipt_date']).dt.date
-        daily_records = reg76_df[reg76_df['receipt_date_dt'] == target_date]
+        conn = sqlite3.connect("excise_registers.db")
+        # Filter by date in SQL for efficiency
+        query = "SELECT * FROM reg76_receipts WHERE date_receipt = ?"
+        daily_records = pd.read_sql_query(query, conn, params=(str(target_date),))
+        conn.close()
         
         if daily_records.empty:
             return {
@@ -156,10 +224,11 @@ def get_reg76_daily_summary(target_date):
         
         # Aggregate data
         pass_numbers = ", ".join(daily_records['permit_no'].dropna().astype(str).tolist())
-        total_bl = daily_records['receipt_bl'].sum()
-        total_al = daily_records['receipt_al'].sum()
-        mfm1_bl = daily_records['mfm1_bl'].sum() if 'mfm1_bl' in daily_records.columns else total_bl
-        mfm1_al = daily_records['mfm1_al'].sum() if 'mfm1_al' in daily_records.columns else total_al
+        total_bl = daily_records['rec_bl'].sum()
+        total_al = daily_records['rec_al'].sum()
+        # Note: If mfm1_bl/al are not in schema, fallback to rec_bl/al
+        mfm1_bl = total_bl # Adjust if mfm1 columns are added to SQLite later
+        mfm1_al = total_al
         
         return {
             "count": len(daily_records),
@@ -169,7 +238,8 @@ def get_reg76_daily_summary(target_date):
             "mfm1_bl": float(mfm1_bl),
             "mfm1_al": float(mfm1_al)
         }
-    except Exception:
+    except Exception as e:
+        print(f"Error reading Reg-76 SQLite: {e}")
         return {
             "count": 0,
             "pass_numbers": "",
@@ -180,20 +250,24 @@ def get_reg76_daily_summary(target_date):
         }
 
 def get_reg74_daily_summary(target_date):
-    """Get all Reg-74 operations for a specific date"""
+    """Get all Reg-74 operations for a specific date from SQLite"""
     try:
-        reg74_df = pd.read_csv("reg74_data.csv")
+        conn = sqlite3.connect("excise_registers.db")
+        # Get daily records for wastage
+        query_daily = "SELECT * FROM reg74_operations WHERE operation_date = ?"
+        daily_records = pd.read_sql_query(query_daily, conn, params=(str(target_date),))
         
-        if reg74_df.empty:
+        # Get all records to find latest closing for each VAT
+        query_all = "SELECT * FROM reg74_operations ORDER BY operation_date DESC"
+        reg74_df = pd.read_sql_query(query_all, conn)
+        conn.close()
+        
+        if daily_records.empty and reg74_df.empty:
             return {
                 "operational_wastage_bl": 0.0,
                 "operational_wastage_al": 0.0,
-                "vat_balances": {}
+                "vat_balances": {vat: {"bl": 0.0, "al": 0.0} for vat in ALL_VATS}
             }
-        
-        # Filter by date
-        reg74_df['operation_date_dt'] = pd.to_datetime(reg74_df['operation_date']).dt.date
-        daily_records = reg74_df[reg74_df['operation_date_dt'] == target_date]
         
         # Get storage wastage
         wastage_bl = daily_records['storage_wastage_bl'].sum() if 'storage_wastage_bl' in daily_records.columns else 0.0
@@ -205,10 +279,10 @@ def get_reg74_daily_summary(target_date):
             vat_records = reg74_df[
                 (reg74_df['source_vat'] == vat) | 
                 (reg74_df['destination_vat'] == vat)
-            ].sort_values('operation_date', ascending=False)
+            ]
             
             if not vat_records.empty:
-                latest = vat_records.iloc[0]
+                latest = vat_records.iloc[0] # Already sorted by date DESC
                 vat_balances[vat] = {
                     "bl": float(latest.get('closing_bl', 0) or 0),
                     "al": float(latest.get('closing_al', 0) or 0)
@@ -221,7 +295,8 @@ def get_reg74_daily_summary(target_date):
             "operational_wastage_al": float(wastage_al),
             "vat_balances": vat_balances
         }
-    except Exception:
+    except Exception as e:
+        print(f"Error reading Reg-74 SQLite: {e}")
         return {
             "operational_wastage_bl": 0.0,
             "operational_wastage_al": 0.0,
@@ -229,24 +304,12 @@ def get_reg74_daily_summary(target_date):
         }
 
 def get_rega_daily_summary(target_date):
-    """Get all Reg-A production for a specific date"""
+    """Get all Reg-A production for a specific date from SQLite"""
     try:
-        rega_df = pd.read_csv("rega_data.csv")
-        
-        if rega_df.empty:
-            return {
-                "total_bottles": 0,
-                "total_bl_produced": 0.0,
-                "total_al_produced": 0.0,
-                "total_al_in_bottles": 0.0,
-                "production_wastage_bl": 0.0,
-                "production_wastage_al": 0.0,
-                "production_fees": 0.0
-            }
-        
-        # Filter by date
-        rega_df['production_date_dt'] = pd.to_datetime(rega_df['production_date']).dt.date
-        daily_records = rega_df[rega_df['production_date_dt'] == target_date]
+        conn = sqlite3.connect("excise_registers.db")
+        query = "SELECT * FROM rega_production WHERE production_date = ?"
+        daily_records = pd.read_sql_query(query, conn, params=(str(target_date),))
+        conn.close()
         
         if daily_records.empty:
             return {
@@ -262,12 +325,12 @@ def get_rega_daily_summary(target_date):
         # Aggregate production data
         total_bottles = daily_records['total_bottles'].sum()
         total_al_in_bottles = daily_records['bottles_total_al'].sum()
-        mfm2_total_bl = daily_records['mfm2_reading_bl'].sum()  # BL from MFM2
+        mfm2_total_bl = daily_records['mfm2_reading_bl'].sum()
         mfm2_total_al = daily_records['mfm2_reading_al'].sum()
         production_wastage_bl = daily_records['wastage_bl'].sum()
         production_wastage_al = daily_records['wastage_al'].sum()
         
-        # Calculate production fees: ₹3/- per BL produced (MFM2 BL reading)
+        # Calculate production fees: ₹3/- per BL produced
         production_fees = mfm2_total_bl * PRODUCTION_FEES_RATE_PER_BL
         
         return {
@@ -279,7 +342,8 @@ def get_rega_daily_summary(target_date):
             "production_wastage_al": float(production_wastage_al),
             "production_fees": float(production_fees)
         }
-    except Exception:
+    except Exception as e:
+        print(f"Error reading Reg-A SQLite: {e}")
         return {
             "total_bottles": 0,
             "total_bl_produced": 0.0,
