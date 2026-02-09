@@ -1,5 +1,5 @@
 ﻿import os
-file_path = r"C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\maintenance_pdf.py"
+file_path = os.path.join(os.getcwd(), "maintenance_pdf.py")
 
 content = '''"""
 PROFESSIONAL E+H PDF REPORT - Stunning Design
@@ -73,7 +73,7 @@ def generate_maintenance_pdf(start_date: date, end_date: date, output_path: str 
         section_style = ParagraphStyle("Section", parent=styles["Heading1"], fontSize=18, textColor=colors.white, backColor=EH_BLUE, alignment=TA_LEFT, fontName="Helvetica-Bold", leftIndent=12, borderPadding=(8,8,8,8), leading=24)
         elements.append(Spacer(1, 0.3*inch))
         try:
-            logo = Image(r"C:\Users\Lenovo\Downloads\eh_logo.png", width=4*inch, height=1*inch)
+            logo = Image("eh_logo.png", width=4*inch, height=1*inch)
             logo.hAlign = "CENTER"
             elements.append(logo)
         except:

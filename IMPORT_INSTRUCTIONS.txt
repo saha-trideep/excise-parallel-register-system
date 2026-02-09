@@ -19,7 +19,7 @@ STEP 2: Navigate to Project Folder
 ───────────────────────────────────────────────────────────────
 Copy and paste this command, then press Enter:
 
-cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system
+cd [Your-Project-Folder]
 
 
 STEP 3: Run the Import Script

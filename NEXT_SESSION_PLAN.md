@@ -8,7 +8,7 @@ We have successfully transitioned the system to a **Local-First Architecture**. 
 
 ## 📂 Desktop Storage Location
 All registers are saved automatically to:
-`C:\Users\Lenovo\Desktop\Excise_Register_Data\`
+`Desktop\Excise_Register_Data\`
 -   `Reg76_Data.xlsx`
 -   `Reg74_Data.xlsx`
 -   `RegA_Data.xlsx` (Pending implementation of desktop storage logic in backend, currently CSV/GSheet only)

@@ -10,7 +10,7 @@
 2. Type: `cmd` and press Enter
 3. Copy and paste this command:
 ```
-cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system && streamlit run Home.py
+cd [Your-Project-Folder] && streamlit run Home.py
 ```
 4. Press Enter
 5. Wait for "You can now view your Streamlit app in your browser"
@@ -28,7 +28,7 @@ cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-registe
 1. Press `Win + X`, choose "PowerShell" or "Terminal"
 2. Run:
 ```powershell
-cd "C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system"
+cd "[Your-Project-Folder]"
 streamlit run Home.py
 ```
 
@@ -68,7 +68,7 @@ pip install streamlit
 ### Error: "No module named 'maintenance_schema'"
 **Fix:** Make sure you're in the correct directory:
 ```
-cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system
+cd [Your-Project-Folder]
 ```
 
 ### Error: "Port 8501 is already in use"

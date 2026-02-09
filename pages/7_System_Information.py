@@ -94,6 +94,6 @@ The Excise Parallel Register System is designed as a **Cohesive Ecosystem** engi
 # Footer
 st.markdown("""
 <div style='text-align: center; color: #718096; padding: 20px; font-size: 0.8rem;'>
-    SIP2LIFE DISTILLERIES PVT. LTD. • System Documentation v2.0 • Antigravity AI
+    SIP2LIFE DISTILLERIES PVT. LTD. • System Documentation v2.0
 </div>
 """, unsafe_allow_html=True)

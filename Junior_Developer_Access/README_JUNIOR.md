@@ -1,6 +1,6 @@
 # Junior Developer Access - Table of Contents
 
-**Project Location**: `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system`
+**Project Location**: `[Your-Project-Folder]`
 
 Welcome to the **Excise Parallel Register System** testing access folder. This folder contains all the key documents you need to understand, test, and verify the project.
 

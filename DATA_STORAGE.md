@@ -24,14 +24,14 @@ Here's where each register saves its data on Streamlit Cloud and locally.
 ### **1. Reg-A (Production Register)**
 - **Storage:** CSV file
 - **File:** `rega_data.csv`
-- **Location:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\rega_data.csv`
+- **Location:** `./rega_data.csv`
 - **Backend:** `rega_backend.py`
 - **Status:** ✅ Saves locally
 
 ### **2. Reg-74 (Vat Operations)**
 - **Storage:** CSV file (with Google Sheets option)
 - **File:** `reg74_data.csv`
-- **Location:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\reg74_data.csv`
+- **Location:** `./reg74_data.csv`
 - **Backend:** `reg74_backend.py`
 - **Google Sheets:** Optional (needs credentials)
 - **Status:** ✅ Saves locally, ⚠️ Google Sheets needs setup
@@ -39,21 +39,21 @@ Here's where each register saves its data on Streamlit Cloud and locally.
 ### **3. Reg-76 (SIP 2 Register)**
 - **Storage:** CSV file
 - **File:** `reg76_data.csv`
-- **Location:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\reg76_data.csv`
+- **Location:** `./reg76_data.csv`
 - **Backend:** `reg76_backend.py`
 - **Status:** ✅ Saves locally
 
 ### **4. Reg-78 (Production Fees)**
 - **Storage:** CSV file
 - **File:** `reg78_data.csv`
-- **Location:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\reg78_data.csv`
+- **Location:** `./reg78_data.csv`
 - **Backend:** `reg78_backend.py`
 - **Status:** ✅ Saves locally
 
 ### **5. Reg-B (Bottle Issues)**
 - **Storage:** SQLite database
 - **Database:** `excise_registers.db`
-- **Location:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\excise_registers.db`
+- **Location:** `./excise_registers.db`
 - **Tables:**
   - `regb_production_fees`
   - `regb_bottle_stock`
@@ -64,7 +64,7 @@ Here's where each register saves its data on Streamlit Cloud and locally.
 ### **6. Excise Duty Register**
 - **Storage:** SQLite database
 - **Database:** `excise_registers.db` (same as Reg-B)
-- **Location:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\excise_registers.db`
+- **Location:** `./excise_registers.db`
 - **Tables:**
   - `excise_duty_ledger`
   - `excise_duty_bottles`

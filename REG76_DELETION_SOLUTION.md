@@ -146,7 +146,7 @@ User Action → CSV Updated → Google Sheets Synced
 ```
 
 ### Storage Locations
-- **CSV:** `c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\reg76_data.csv`
+- **CSV:** `./reg76_data.csv` (in project folder)
 - **Google Sheets:** https://docs.google.com/spreadsheets/d/1Ecmrq9JUhCerhq4mebO1Jtpw8sD_tTo-79_x3Jabr68
 
 ### Sync Behavior

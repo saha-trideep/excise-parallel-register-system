@@ -6,7 +6,7 @@
 
 ```bash
 # Navigate to project
-cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system
+cd [Your-Project-Folder]
 
 # Install new dependencies
 pip install reportlab

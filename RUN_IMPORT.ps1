@@ -5,7 +5,7 @@ Write-Host "================================================" -ForegroundColor C
 Write-Host ""
 
 $csvPath = "C:\Users\Lenovo\Desktop\Daily Activity Database - Activity.csv"
-$dbPath = "C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\excise_registers.db"
+$dbPath = "$PSScriptRoot\excise_registers.db"
 
 # Check if CSV exists
 if (-not (Test-Path $csvPath)) {
@@ -19,7 +19,7 @@ Write-Host "✓ Running Python import script..." -ForegroundColor Green
 Write-Host ""
 
 # Change to project directory and run Python
-Set-Location "C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system"
+Set-Location $PSScriptRoot
 
 # Try different Python commands
 $pythonCommands = @("python", "python3", "py")
@@ -45,7 +45,7 @@ if (-not $pythonFound) {
     Write-Host "ERROR: Python not found!" -ForegroundColor Red
     Write-Host ""
     Write-Host "Please run this command in Command Prompt:" -ForegroundColor Yellow
-    Write-Host "cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system" -ForegroundColor White
+    Write-Host "cd [Your-Project-Folder]" -ForegroundColor White
     Write-Host "python import_december_data.py" -ForegroundColor White
     Write-Host ""
     Read-Host "Press Enter to exit"

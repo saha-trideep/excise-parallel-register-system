@@ -9,7 +9,7 @@ Generate a professional PDF report for December 4-30, 2025 using your CSV data.
 
 ### Method 1: Double-click the Batch File (EASIEST)
 1. Open File Explorer
-2. Navigate to: `C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system`
+2. Navigate to your project folder (where the app is installed)
 3. Find and double-click: **IMPORT_DECEMBER_DATA.bat**
 4. Wait for "Successfully imported X activities!" message
 5. Press any key to close
@@ -18,7 +18,7 @@ Generate a professional PDF report for December 4-30, 2025 using your CSV data.
 1. Press Win+R, type `cmd`, press Enter
 2. Copy and paste:
 ```
-cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system
+cd [Your-Project-Folder]
 python import_december_data.py
 ```
 3. Press Enter
@@ -124,7 +124,7 @@ pip install reportlab
 ```
 
 ### Can't find the batch file
-Path: `C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\IMPORT_DECEMBER_DATA.bat`
+Path: `IMPORT_DECEMBER_DATA.bat` (in project folder)
 
 ---
 
@@ -132,9 +132,9 @@ Path: `C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-reg
 
 **CSV Source:** `C:\Users\Lenovo\Desktop\Daily Activity Database - Activity.csv`
 
-**Import Script:** `C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\import_december_data.py`
+**Import Script:** `./import_december_data.py`
 
-**Database:** `C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system\excise_registers.db`
+**Database:** `./excise_registers.db`
 
 **Generated PDF:** Will be in the project folder with name like:
 `maintenance_report_2025-12-04_2025-12-30.pdf`

@@ -29,7 +29,7 @@
 ### Step 1: Push Code to GitHub
 
 ```bash
-cd c:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system
+cd [Your-Project-Folder]
 
 # Initialize git (if not already done)
 git init

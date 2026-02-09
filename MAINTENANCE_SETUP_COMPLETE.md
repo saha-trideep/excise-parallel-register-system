@@ -25,7 +25,7 @@ uv pip install reportlab
 
 ### Running the App
 ```bash
-cd C:\Users\Lenovo\.gemini\antigravity\playground\trideepexcise-parallel-register-system
+cd [Your-Project-Folder]
 streamlit run Home.py
 ```
 
