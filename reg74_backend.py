@@ -174,8 +174,16 @@ def save_record(data_dict):
             synopsis_data["synopsis_date"] = str(target_date)
             reg78_backend.save_record(synopsis_data)
             st.info("📊 Reg-78 Daily Synopsis auto-updated!")
+        
+        # 2. Auto-generate Daily Handbook PDF
+        try:
+            from handbook_generator_v2 import EnhancedHandbookGenerator
+            EnhancedHandbookGenerator(target_date).generate_handbook()
+            st.info("📑 Daily Handbook auto-generated!")
+        except Exception as e:
+            st.warning(f"⚠️ Handbook generation failed: {e}")
     except Exception as e:
-        st.warning(f"⚠️ Reg-78 auto-update failed: {e}")
+        st.warning(f"⚠️ Automation hooks failed: {e}")
     # -------------------------
 
     if sync_success:
